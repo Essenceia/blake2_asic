@@ -1,25 +1,7 @@
-`default_nettype none
+`timescale 1ns / 1ps
 
-module serdes (
-	input wire clk, 
-	
-	input wire      data_v_i,
-	input wire [7:0] data_i,
-
-	output wire [511:0] data_o
-	);
-
-	
-	reg [511:0] data_q;
-
-	always @(posedge clk)
-		if (data_v_i) data_q <= {data_q[504:0], data_i};
-
-	assign data_o = data_q;
-endmodule
-
-module top (
-    input  wire [7:0] ui_in,    // Dedicated inputs
+module top(
+	input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
     output wire [7:0] uio_out,  // IOs: Output path
@@ -27,33 +9,64 @@ module top (
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
-);
+); 
+	wire hash_finished;
+	wire [7:0] hash;
+	
+	wire [7:0] kk,nn;
+	wire [63:0] ll; 
+	
+	wire data_v; 
+	wire [7:0] data; 
+	wire [5:0] data_idx; 
+	wire block_first, block_last; 
 
-	wire [511:0] data;
-    wire [7:0] _unused_ioin = uio_in;
+	assign uio_oe = 8'b0000_1000;
+	assign uio_out[7:4] = 4'd0;
+	assign uio_out[2:0] = 3'd0;
 
-	wire hash_v;
-	wire [255:0] hash;
-
-	serdes m_serdes (
+	io_intf m_io_intf(
 		.clk(clk),
-		.data_i(ui_in),
-		.data_v_i(ena),
-		.data_o(data)
-	); 
+		.nreset(rst_n),
 
+		.valid_i(uio_in[0]),
+		.cmd_i(uio_in[2:1]),
+		.data_i(ui_in),
+		.hash_finished_o(uio_out[3]),
+		.hash_o(uo_out),
+	
+		.hash_finished_i(hash_finished),
+		.hash_i(hash),
+
+		.kk_o(kk),
+		.nn_o(nn),
+		.ll_o(ll),
+
+		.data_v_o(data_v),
+		.data_o(data),
+		.data_idx_o(data_idx),
+		.block_first_o(block_first),
+		.block_last_o(block_last)
+	);
+	
 	blake2s_hash256 m_blake2(
 		.clk(clk),
-		.nreset(rst_n), 
-		.valid_i(ena),
+		.nreset(rst_n),
+
+		.kk_i(kk),
+		.nn_i(nn),
+		.ll_i(ll),
+
+		.block_first_i(block_first),
+		.block_last_i(block_last),
+
+		.data_v_i(data_v),
 		.data_i(data),
-	
-		.hash_v_o(hash_v),
-		.hash_o(hash)
+		.data_idx_i(data_idx),
+
+
+		.finished_o(hash_finished),
+		.h_o(hash)
 	);
-	assign uo_out = hash[255:247]; 
-	assign uio_out = {'0, hash_v};
-	assign uio_oe = '0;
-
-
 endmodule
+
