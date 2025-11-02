@@ -61,7 +61,7 @@ void blocs_to_pinout(data_blocs_t *b, size_t bl, pinout_t *p, size_t pl){
 void send_data(uint8_t *data, size_t dl, pinout_t *p, size_t pl, uint dma_chan, PIO pio, uint sm)
 {
 	size_t bl = (dl+pl-1) / pl; // ceil division, size_t is an unsigned and the c division convention is to round down
-	data_blocs_t *blocs = (data_blocs_t*)malloc(bl);
+	data_blocs_t *blocs = (data_blocs_t*)malloc(bl * sizeof(*blocs));
 	hard_assert(blocs);
 
 	data_to_blocs(data, dl, blocs, bl);
