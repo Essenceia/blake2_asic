@@ -4,7 +4,7 @@ module byte_size_config(
  
 	input wire       valid_i,
 	input wire [1:0] cmd_i,
-	input wire [7:0] data_i,
+	(* MARK_DEBUG = "true" *)input wire [7:0] data_i,
 
 	output wire [5:0]  kk_o,
 	output wire [5:0]  nn_o,

@@ -45,7 +45,7 @@ reg [1:0] loopback_ctrl_bus_q, loopback_ctrl_q;
 
 wire [PMOD_W-1:0] hash;
 reg  [PMOD_W-1:0] hash_bus_q;
-wire [1:0] hash_ctrl;
+(* MARK_DEBUG = "true" *) wire [1:0] hash_ctrl;
 reg  [1:0] hash_ctrl_bus_q;
 
 /* clk */
