@@ -2,6 +2,8 @@ set core_name "db_core_0"
 
 create_debug_core $core_name ila
 
+set_property C_INPUT_PIPE_STAGES 2   [get_debug_cores ${core_name}]
+
 # connect clk to main design logic clk
 connect_debug_port db_core_0/clk [get_nets clk]
 
@@ -32,10 +34,4 @@ foreach sig [array names map] {
 	connect_debug_port $core_name/probe$i [get_nets $map($sig)]
 	incr i 1
 }
-
-#opt_design 
-#place_design
-#route_design 
-#write_debug_probes -force $debug_probes_path
-#report_debug_core
 
