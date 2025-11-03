@@ -13,8 +13,7 @@ VIVADO_BIT_PATH=$(VIVADO_PRJ_DIR)/$(VIVADO_PRJ_NAME).svf
 
 VIVADO_CMD=vivado -mode batch -source
 
-SRC_PATH=../..
-UTILS_PATH=../
+SRC_PATH=..
 
 
 .PHONY: setup build prog gui
@@ -23,11 +22,11 @@ all: setup build gen
 
 $(VIVADO_PRJ_PATH): setup.tcl 
 	mkdir -p $(VIVADO_PRJ_DIR)
-	$(VIVADO_CMD) setup.tcl -tclargs $(VIVADO_PRJ_DIR) $(VIVADO_PRJ_NAME) $(UTILS_PATH) $(SRC_PATH)  
+	$(VIVADO_CMD) setup.tcl -tclargs $(VIVADO_PRJ_DIR) $(VIVADO_PRJ_NAME) $(SRC_PATH)  
 
 setup: $(VIVADO_PRJ_PATH) 
 
-$(VIVADO_CHECKPOINT_PATH): $(VIVADO_PRJ_PATH) $(wildcard *.xdc) $(wildcard $(SRC_PATH)/*.v) $(wildcard ${UTILS_PATH}/*.v) $(wildcard *.v)
+$(VIVADO_CHECKPOINT_PATH): $(VIVADO_PRJ_PATH) $(wildcard *.xdc) $(wildcard $(SRC_PATH)/*.v) $(wildcard *.v)
 	$(VIVADO_CMD) build.tcl -tclargs $(VIVADO_PRJ_PATH) $(VIVADO_CHECKPOINT_PATH) $(if $(debug), $(debug) $(VIVADO_DEBUG_PROBE_PATH) )
 
 build: $(VIVADO_CHECKPOINT_PATH)
