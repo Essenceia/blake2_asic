@@ -1,0 +1,14 @@
+.program sync_sm
+
+.wrap_target
+	irq set 4
+	irq clear 4
+.wrap
+
+% c-sdk {
+static inline void sync_sm_program_init(PIO pio, uint sm, uint offset, float fdiv){
+	pio_sm_config c = sync_sm_program_get_default_config(offset);
+	pio_sm_init(pio, sm, offset, &c);
+	pio_sm_set_clkdiv(pio, sm, fdiv);
+}
+%}

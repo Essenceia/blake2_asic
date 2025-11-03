@@ -1,0 +1,4 @@
+`verilator_config 
+
+lint_off -rule UNUSEDSIGNAL -file "*" -match "Signal is not used: 'debug_*"
+lint_off -file "lib/*" -match "*"

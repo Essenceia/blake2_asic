@@ -1,0 +1,41 @@
+.program bus_clk
+
+; Generate the bus clk signal, simple square wave
+; using wrap to not pay the 1 cycle instruction overhead of the loop
+; state machine should run at 2*freq target frequency
+; since the taget frequency is lower ( 50MHz and less ) than the RP2040 system clk frequence 
+; we can acheive by setting up the clk divider 
+
+	set pindirs, 1 [1]
+.wrap_target
+	set pins, 1 
+	set pins, 0
+.wrap
+
+% c-sdk {
+// C sdk helper functions
+static inline void bus_clk_program_init(PIO pio, uint sm , uint offset, uint pin, float fdiv){
+	pio_sm_config c = bus_clk_program_get_default_config(offset);
+	// set set state before the sm starts 
+	sm_config_set_set_pins(&c, pin, 1);
+	
+	// connect pio pin driver to gpio pad
+	pio_gpio_init(pio, pin);
+    gpio_set_drive_strength(pin, GPIO_DRIVE_STRENGTH_12MA);
+	gpio_set_pulls(pin, false, true);	
+	gpio_set_slew_rate(pin, GPIO_SLEW_RATE_FAST);
+
+	// set pindir to output 
+	pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+
+	// reset the state machin to a consistent state	
+	pio_sm_init(pio, sm, offset, &c);
+
+	// set the sm clk rate
+	pio_sm_set_clkdiv(pio, sm, fdiv);
+
+	// not enabling the sm here, will let the caller do so so that
+	// multiple state machines can be triggered at the same time 
+	// as to keep them in sync
+}
+%}

@@ -1,0 +1,59 @@
+.program data_rd
+
+init:
+	jmp loop
+init_data_rd:
+	set x, 0; dumy cycle
+data_rd:
+	in pins, 8
+	jmp pin data_rd
+	push block
+.wrap_target
+loop:
+	;irq wait 4
+	jmp pin init_data_rd
+.wrap
+
+% c-sdk {
+static inline void data_rd_program_init(PIO pio, uint sm , uint offset, float fdiv){
+	uint i;
+	uint32_t pindirs = 0;
+	uint32_t pinmask = 0;
+	pio_sm_config c = data_rd_program_get_default_config(offset);
+
+	// set hash data valid pin as jmp pin source
+	sm_config_set_jmp_pin(&c, CTRL_HASH_VALID_PIN);
+
+	// set hash as in pin offset
+	sm_config_set_in_pins(&c, HASH_BASE_PIN);
+
+	// fifo join
+	sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+	
+	// autopush : set to 32b, manually push at the end of
+	// hash in case hash length is not a modulo of 4
+	sm_config_set_in_shift(&c, true, true, 32);
+
+	pio_sm_init(pio, sm, offset, &c);
+
+	// init gpio
+	for(uint i=HASH_BASE_PIN; i < HASH_BASE_PIN + DATA_W; i++){
+		pio_gpio_init(pio, i);
+		
+	}
+	pinmask |= DATA_MASK << HASH_BASE_PIN;
+
+	pio_gpio_init(pio, CTRL_HASH_VALID_PIN);
+	//gpio_set_dir(CTRL_HASH_VALID_PIN, GPIO_IN);
+	//gpio_disable_pulls(CTRL_HASH_VALID_PIN);
+	pinmask |= (uint32_t)0x1 << CTRL_HASH_VALID_PIN;
+	
+	pio_sm_set_pindirs_with_mask(pio, sm, pindirs, pinmask);
+
+	// clk div
+	pio_sm_set_clkdiv(pio, sm, fdiv);
+
+	// clear fifo 
+	pio_sm_clear_fifos(pio, sm);
+}
+%}

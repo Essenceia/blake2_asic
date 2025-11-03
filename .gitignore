@@ -11,3 +11,7 @@ test/results.xml
 test/gate_level_netlist.v
 tt
 ttsetup
+update.sh
+build
+*.swp
+*.log

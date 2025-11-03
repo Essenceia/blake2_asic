@@ -1,0 +1,23 @@
+.program led
+
+; Blink led, pull is blocking by default, used to indicate accross the room that 
+; testing has hit a bug
+
+.wrap_target
+	pull
+	out pins, 1
+.wrap
+
+% c-sdk {
+// C sdk helper functions
+static inline void led_program_init(PIO pio, uint sm , uint offset, uint pin, float fdiv){
+	pio_sm_config c = led_program_get_default_config(offset);
+	sm_config_set_out_pins(&c, pin, 1);
+	pio_gpio_init(pio, pin);
+	pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+	pio_sm_init(pio, sm, offset, &c);
+	gpio_set_dir(pin, GPIO_OUT);
+	pio_sm_set_clkdiv(pio, sm, fdiv);
+	pio_sm_set_enabled(pio, sm,true);
+}
+%}

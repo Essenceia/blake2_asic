@@ -1,0 +1,8 @@
+- [x] basic cocotb tb, test hash results
+- [x] add invalid cycles in data transfert
+    - [x] in data
+    - [x] in config 
+- [ ] add loopback test to tb
+- [x] figure out how to send out data over consequtive cycles 
+- [ ] fpga emulation 
+- [ ] formal emultions

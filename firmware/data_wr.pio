@@ -1,0 +1,107 @@
+.program data_wr
+
+.define offset 0
+.origin offset
+
+
+.define PUBLIC CTRL_READY_PIN 19
+.define PUBLIC BUS_CLK_PIN    28
+
+; send data from rpi to hw, writes both ctrl and data bus 
+; expected to be running at 2xBUS_CLK freq
+
+; will use auto pulling from the tx fifo to write to the gpio
+; if the fifo is empty OSR will be empty 
+; although not documented, reading an empty OSR will read the X
+; scratchpad, as such, we set the content of the scratchpad to 0
+
+; the wait is on the ready signal signifying the asic can accept
+; a new data transaction
+
+; irq 4 is a PIO only IRQ used to corrdinate the clk state between SM
+; irq 3 is visible to the CPU and is used to wake up the core from a 
+; low power mode when it is streaming data blocks. 
+; We do this since the data streaming doesn't re-evaluate the state of
+; the ready pin when data is being streamed out from the fifo. 
+
+data_init:
+	set pins, 0
+	set x, 0
+	jmp offset+data_start
+data_wr:
+	out pins, 32 [1]
+	set pins, 0
+	jmp !OSRE offset+data_wr
+	set pins, 0
+.wrap_target
+data_start:
+	wait 1 gpio CTRL_READY_PIN
+	irq wait 4 
+	pull noblock
+	jmp offset+data_wr
+.wrap
+
+% c-sdk {
+static inline void data_wr_program_init(PIO pio, uint sm, uint offset, float fdiv){
+	uint i;
+	uint32_t pindirs = 0;// out = 1, in = 0
+	uint32_t pinmask = 0;
+	pio_sm_config c = data_wr_program_get_default_config(offset);
+
+	// join fifo's for one large fifo since sm is tx only
+	sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+	// enable fifo autopull and set threashold (32)
+	sm_config_set_out_shift(&c, true, true, 32);
+
+	//set "out" instruction to cover the entire gpio range
+	sm_config_set_out_pins(&c, 0, 32);
+
+	// set "set" instruction base pin offset to ctrl bit to overcome the 
+	// 5b wide wright limitation
+	_Static_assert(CTRL_BASE_PIN+5 > CTRL_VALID_PIN);
+	sm_config_set_set_pins(&c, CTRL_VALID_PIN, 3);
+
+	// in base, used in wait
+	sm_config_set_in_pins(&c, CTRL_READY_PIN);
+
+	// set config
+	pio_sm_init(pio, sm, offset, &c); 
+
+	// enable pins, connect to pio
+	for(i=DATA_BASE_PIN; i < DATA_BASE_PIN + DATA_W; i++){ // data
+		pio_gpio_init(pio, i);
+		gpio_set_drive_strength(i, GPIO_DRIVE_STRENGTH_12MA);
+		gpio_set_slew_rate(i, GPIO_SLEW_RATE_FAST);
+		gpio_set_pulls(i, false, true);
+	}
+	pindirs |= DATA_MASK << DATA_BASE_PIN;
+	pinmask |= DATA_MASK << DATA_BASE_PIN;
+
+	for(i=CTRL_DATA_BASE_PIN; i < CTRL_DATA_BASE_PIN + CTRL_DATA_W; i++){ // ctrl data
+		pio_gpio_init(pio, i);
+		gpio_set_drive_strength(i, GPIO_DRIVE_STRENGTH_12MA);
+		gpio_set_slew_rate(i, GPIO_SLEW_RATE_FAST);
+		gpio_set_pulls(i, false, true);
+	}
+	pinmask |= CTRL_DATA_MASK << CTRL_DATA_BASE_PIN;
+	pindirs |= CTRL_DATA_MASK << CTRL_DATA_BASE_PIN;
+
+	// no need to set pio function for input pins
+	pio_gpio_init(pio,CTRL_READY_PIN);
+	gpio_set_dir(CTRL_READY_PIN, GPIO_IN);
+	gpio_disable_pulls(CTRL_READY_PIN);
+
+	pinmask |= (uint32_t)0x1 << CTRL_READY_PIN;
+
+	pio_sm_set_pindirs_with_mask(pio, sm, pindirs, pinmask); 
+	
+	// set clk freq 
+	pio_sm_set_clkdiv(pio, sm, fdiv);
+
+	// clear fifo's
+	pio_sm_clear_fifos(pio, sm);
+
+}
+%}
+
