@@ -8,7 +8,7 @@ data_rd:
 	push block
 .wrap_target
 loop:
-	irq wait 4 [1]
+	irq wait 4
 	jmp pin data_rd
 .wrap
 

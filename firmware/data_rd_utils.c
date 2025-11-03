@@ -19,18 +19,20 @@ uint init_rd_dma_channel(PIO pio, uint sm){
 	return dma_chan; 
 }
 
-void setup_rd_dma_hash_stream(uint dma_chan, uint nn, uint8_t* buffer, size_t bl){
+void setup_rd_dma_hash_stream(uint dma_chan, uint nn, uint8_t* buffer, size_t bl, PIO pio, uint sm){
 	size_t tc = (nn + PIO_FIFO_W-1)/ PIO_FIFO_W;	
 	hard_assert(tc <= bl*PIO_FIFO_W);
 	hard_assert(tc);
 	hard_assert(buffer);
+	hard_assert(!dma_channel_is_busy(dma_chan));
+
 	// clear hash, helps with debug
 	memset(buffer, 0, bl);
-	hard_assert(!dma_channel_is_busy(dma_chan));
-	dma_channel_set_write_addr(dma_chan, buffer, false);
-	dma_channel_set_transfer_count(dma_chan, tc, true);
+	// clear fifo, might have one entry due to extra push 
+	pio_sm_clear_fifos(pio, sm);
 
-	
+	dma_channel_set_write_addr(dma_chan, buffer, false);
+	dma_channel_set_transfer_count(dma_chan, tc, true);	
 }
 
 void read_hash(uint8_t* hash, uint8_t nn, uint8_t *buffer, size_t bl, uint dma_chan){

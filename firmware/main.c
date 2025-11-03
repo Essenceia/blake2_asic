@@ -147,10 +147,10 @@ int main() {
 		tc = dma_hw->ch[rd_dma_chan].transfer_count; 
 	
 		/* config */
-		send_config(0, nn, 3, wr_dma_chan, p, pl);
+		send_config(7, nn, 0xff00, wr_dma_chan, p, pl, pio[PIO_WR], sm[PIO_WR]);
 
 		/* setup dma hash read stream */
-		setup_rd_dma_hash_stream(rd_dma_chan, nn, hash_buffer, MAX_NN);
+		setup_rd_dma_hash_stream(rd_dma_chan, nn, hash_buffer, MAX_NN, pio[PIO_RD], sm[PIO_RD]);
 
 		/* send data */
 		send_data(random_data, BLOCK_W, p, pl, wr_dma_chan, pio[PIO_WR], sm[PIO_WR]);
