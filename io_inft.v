@@ -2,8 +2,8 @@ module byte_size_config(
 	input wire clk, 
 	input wire nreset,
  
-	input wire       valid_i,
-	input wire [1:0] cmd_i,
+	(* MARK_DEBUG = "true" *)input wire       valid_i,
+	(* MARK_DEBUG = "true" *)input wire [1:0] cmd_i,
 	(* MARK_DEBUG = "true" *)input wire [7:0] data_i,
 
 	output wire [5:0]  kk_o,
@@ -30,7 +30,7 @@ module byte_size_config(
 	assign config_n_v = valid_i & ~(cmd_i == CMD_CONF);
 
 	always @(posedge clk) begin
-		if ((~nreset) | config_n_v | (cfg_cnt_q == CFG_CNT_LL_MAX)) begin
+		if ((~nreset) | config_n_v | config_v & (cfg_cnt_q == CFG_CNT_LL_MAX)) begin
 			cfg_cnt_q <= 'd0;
 		end else begin
 			{ unused_cfg_cnt_q, cfg_cnt_q } <= cfg_cnt_q + {3'b0, config_v};
