@@ -9,7 +9,7 @@
 #include "hardware/pio.h"
 #include "hardware/dma.h"
 
-#include "loopback.pio.h"
+#include "led.pio.h"
 #include "bus_clk.pio.h"
 #include "sync_sm.pio.h"
 #include "data_rd.pio.h"
@@ -109,11 +109,10 @@ int main() {
 	sync_sm_program_init(pio[PIO_SYNC], sm[PIO_SYNC], offset[PIO_SYNC], clk_div);
 
 	/* led - explicitlt place on PIO0 to prevent overwritting of GPIO25 by `pull noblock` on data_wr*/
-	s = allocate_prog_pio(0, &pio[PIO_LED], &sm[PIO_LED], &offset[PIO_LED], &loopback_program);
+	s = allocate_prog_pio(0, &pio[PIO_LED], &sm[PIO_LED], &offset[PIO_LED], &led_program);
 	log_init(PIO_LED);
 	hard_assert(s);
-	//clk_div = (float)clock_get_hz(clk_sys) / (LED_PIO_CLK_FREQ_HZ); 
-	loopback_program_init(pio[PIO_LED], sm[PIO_LED], offset[PIO_LED], PICO_DEFAULT_LED_PIN, clk_div);	
+	led_program_init(pio[PIO_LED], sm[PIO_LED], offset[PIO_LED], PICO_DEFAULT_LED_PIN, clk_div);	
 	
 	hard_assert(pio[PIO_CLK] == pio[PIO_WR]);
 	hard_assert(pio[PIO_CLK] == pio[PIO_SYNC]);
