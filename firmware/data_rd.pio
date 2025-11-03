@@ -26,7 +26,7 @@ static inline void data_rd_program_init(PIO pio, uint sm , uint offset, float fd
 	sm_config_set_in_pins(&c, HASH_BASE_PIN);
 
 	// fifo join
-	//sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+	sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
 	
 	// autopush : set to 32b, manually push at the end of
 	// hash in case hash length is not a modulo of 4
