@@ -1,5 +1,8 @@
-xample of BLAKE2s Computation
+# Test vector
 
+Sample of BLAKE2s computation, extract from the specification. 
+
+```
    We compute the unkeyed hash of three ASCII bytes "abc" with
    BLAKE2s-256 and show internal values during computation.
 
@@ -56,3 +59,5 @@ xample of BLAKE2s Computation
 
    BLAKE2s-256("abc") = 50 8C 5E 8C 32 7C 14 E2 E1 A7 2B A3 4E EB 45 2F
                         37 45 8B 20 9E D6 3A 29 4D 99 9B 4C 86 67 59 82
+```
+
