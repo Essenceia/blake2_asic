@@ -1,34 +1,3 @@
-
-###########
-# Configs #
-###########
-
-ifndef debug
-#debug :=
-endif
-
-# Enable waves by default
-ifndef wave
-wave:=1
-endif
-
-# Coverage, enabled by default
-ifndef cov
-cov:=1
-endif
-
-# Asserts, enabled by default
-ifndef assert
-assert:=1
-endif
-
-# Work in progress flag, used to bypass
-# some lint sanity checks during early
-# developpement
-ifndef wip
-wip:=
-endif
-
 ############
 # Sim type #
 ############
@@ -42,9 +11,10 @@ $(info Using simulator: $(SIM))
 ###########
 
 # Global configs.
+FPGA_DIR := fpga
+SW_DIR := firmware
 TB_DIR := tb
 CONF := conf
-WAVE_DIR := wave
 DEBUG_FLAG := $(if $(debug), debug=1)
 DEFINES := $(if $(wave),wave=1)
 WAIVER_FILE := waiver.vlt
@@ -79,62 +49,6 @@ define LINT
 endef
 endif
 
-#########
-# Build #
-#########
-
-# Build variables.
-ifeq ($(SIM),icarus)
-BUILD_DIR := build
-BUILD_FLAGS := 
-else
-BUILD_DIR := obj_dir
-BUILD_FLAGS := 
-BUILD_FLAGS += $(if $(assert),--assert)
-BUILD_FLAGS += $(if $(wave), --trace --trace-underscore) 
-BUILD_FLAGS += $(if $(cov), --coverage --coverage-underscore) 
-BUILD_FLAGS += --timing
-BUILD_FLAGS += --x-initial-edge
-MAKE_THREADS = 4 
-BUILD_FLAGS += -j $(MAKE_THREADS)
-endif
-
-# Build commands.
-ifeq ($(SIM),icarus)
-define BUILD
-	mkdir -p build
-	iverilog $(LINT_FLAGS) -s $2 -o $(BUILD_DIR)/$2 $1
-endef
-else
-define BUILD
-	mkdir -p build
-	verilator $(CONF)/$(WAIVER_FILE) --binary $(LINT_FLAGS) $(BUILD_FLAGS) -o $2 $1  
-endef
-endif
-
-#######
-# Run #
-#######
-
-# Run commands.
-ifeq ($(SIM),icarus)
-define RUN
-	mkdir -p wave
-	vvp $(BUILD_DIR)/$1
-endef
-else
-define RUN
-	mkdir -p wave
-	./$(BUILD_DIR)/$1 $(if $(wave),+trace) 
-endef
-endif
-
-config:
-	@mkdir -p $(CONF)
-
-build:
-	@mkdir -p $(BUILD_DIR)
-
 ########
 # Lint #
 ########
@@ -156,6 +70,20 @@ test:
 	$(MAKE) -C $(TB_DIR)
 
 
+#############
+# Firmware  #
+#############
+# Build RP2040 firmware
+firmware:
+	$(MAKE) -C $(SW_DIR) build
+
+#############
+# FPGA      #
+#############
+# Build vivado project and run PnR, not generating bitstream or flashing
+fpga:
+	$(MAKE) -C $(FPGA_DIR) build
+
 # Cleanup
 clean:
 	rm -f vgcore.* vgd.log*
@@ -163,4 +91,6 @@ clean:
 	rm -fr build/*
 	rm -fr obj_dir/*
 	rm -fr $(WAVE_DIR)/*
+	$(MAKE) -C $(FPGA_DIR) clean
+	$(MAKE) -C $(SW_DIR) clean
 
