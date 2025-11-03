@@ -110,9 +110,9 @@ embarks an official Xilinx supported JTAG probe directly on the board.
 The native presence of this probe will make debugging much more convergent as
 it will allow us to use the ILA debug cores. 
 
-Scripts are provided to automatically the entire FPGA flow in the `fpga/basys3` folder. 
+Scripts are provided to automatically the entire FPGA flow in the `fpga` folder. 
 ```
-cd fpga/basys3
+cd fpga
 ```
 
 Create the Vivado project :
@@ -204,6 +204,3 @@ starting gdb.
 make gdb GDB_SERVER_ADDR=192.168.0.145
 ```
 
-
-
->>>>>>> rtl_dev/master
