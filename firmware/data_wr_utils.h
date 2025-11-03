@@ -18,7 +18,7 @@ typedef struct __attribute__((packed)) {
 	uint8_t data[BLOCK_W];
 } data_blocs_t;
 
-void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p, size_t pl);
+void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p, size_t pl, PIO pio, uint sm);
 
 void send_data(uint8_t *data, size_t dl, pinout_t *p, size_t pl, uint dma_chan, PIO pio, uint sm);
 
@@ -33,7 +33,7 @@ void wr_dma_pinout_blocs(pinout_t *t, uint dma_chan);
 uint init_wr_dma_channel(PIO pio, uint sm);
 
 // start transfer
-void start_wr_dma_pinout_stream(pinout_t *p, size_t pl, uint dma_chan);
+void start_wr_dma_pinout_stream(pinout_t *p, size_t pl, uint dma_chan, PIO pio, uint sm);
 
 #endif // _DATA_WR_UTILS
 

@@ -29,15 +29,15 @@ data_init:
 	set x, 0
 	jmp offset+data_start
 data_wr:
-	out pins, 32
+	out pins, 32 [1]
+	set pins, 0
 	jmp !OSRE offset+data_wr
 	set pins, 0
 .wrap_target
 data_start:
-	;irq set 3
 	wait 1 gpio CTRL_READY_PIN
 	irq wait 4 
-	pull noblock 
+	pull noblock
 	jmp offset+data_wr
 .wrap
 
@@ -71,12 +71,18 @@ static inline void data_wr_program_init(PIO pio, uint sm, uint offset, float fdi
 	// enable pins, connect to pio
 	for(i=DATA_BASE_PIN; i < DATA_BASE_PIN + DATA_W; i++){ // data
 		pio_gpio_init(pio, i);
+		gpio_set_drive_strength(i, GPIO_DRIVE_STRENGTH_12MA);
+		gpio_set_slew_rate(i, GPIO_SLEW_RATE_FAST);
+		gpio_set_pulls(i, false, true);
 	}
 	pindirs |= DATA_MASK << DATA_BASE_PIN;
 	pinmask |= DATA_MASK << DATA_BASE_PIN;
 
 	for(i=CTRL_DATA_BASE_PIN; i < CTRL_DATA_BASE_PIN + CTRL_DATA_W; i++){ // ctrl data
 		pio_gpio_init(pio, i);
+		gpio_set_drive_strength(i, GPIO_DRIVE_STRENGTH_12MA);
+		gpio_set_slew_rate(i, GPIO_SLEW_RATE_FAST);
+		gpio_set_pulls(i, false, true);
 	}
 	pinmask |= CTRL_DATA_MASK << CTRL_DATA_BASE_PIN;
 	pindirs |= CTRL_DATA_MASK << CTRL_DATA_BASE_PIN;

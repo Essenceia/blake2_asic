@@ -2,14 +2,16 @@
 
 init:
 	jmp loop
+init_data_rd:
+	set x, 0; dumy cycle
 data_rd:
 	in pins, 8
 	jmp pin data_rd
 	push block
 .wrap_target
 loop:
-	irq wait 4 [1]
-	jmp pin data_rd
+	;irq wait 4
+	jmp pin init_data_rd
 .wrap
 
 % c-sdk {

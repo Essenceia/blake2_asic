@@ -19,14 +19,14 @@ void config_to_pinout(config_t *c, pinout_t *p, size_t pl)
 	}
 }
 
-void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p, size_t pl)
+void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p, size_t pl, PIO pio, uint sm)
 {
 	config_t c; 
 	c.kk = kk > 32 ? 32: kk; 
 	c.nn = nn > 32 ? 32: nn; 
 	c.ll = ll; 
 	config_to_pinout(&c, p, pl);
-	start_wr_dma_pinout_stream(p, pl ,dma_chan);	
+	start_wr_dma_pinout_stream(p, CONFIG_W ,dma_chan, pio, sm);	
 }
 
 // break data into blocks
@@ -73,11 +73,11 @@ void send_data(uint8_t *data, size_t dl, pinout_t *p, size_t pl, uint dma_chan, 
 	// stream by block, since we must examine the ready signal between
 	// each transfer
 	// to guaranty the pio pull is empty 
-	dma_channel_wait_for_finish_blocking(dma_chan); // wait for dma channel to be empty, else will overwrite
+	//dma_channel_wait_for_finish_blocking(dma_chan); // wait for dma channel to be empty, else will overwrite
 	for(uint b=0; b < bl; b++){
-		start_wr_dma_pinout_stream(&p[b*BLOCK_W], BLOCK_W, dma_chan);
-		dma_channel_wait_for_finish_blocking(dma_chan);
-		while(pio_sm_get_tx_fifo_level(pio, sm)!=0){}
+		start_wr_dma_pinout_stream(&p[b*BLOCK_W], BLOCK_W, dma_chan, pio, sm);
+		/*dma_channel_wait_for_finish_blocking(dma_chan);
+		while(pio_sm_get_tx_fifo_level(pio, sm)!=0){}*/
 	} 
 	// free
 	free(blocs);
@@ -102,9 +102,12 @@ uint init_wr_dma_channel(PIO pio, uint sm)
 }
 /* set up dma stream of data to pio
  * assumption: the pinout array is allocated continiously in memory */
-void start_wr_dma_pinout_stream(pinout_t *p, size_t pl, uint dma_chan)
+void start_wr_dma_pinout_stream(pinout_t *p, size_t pl, uint dma_chan, PIO pio, uint sm)
 {
-	// TODO stall until current dma transfer stream is finished
+	// stall until current dma transfer stream is finished
+	dma_channel_wait_for_finish_blocking(dma_chan);
+	while(pio_sm_get_tx_fifo_level(pio, sm)!=0){}	
+
 	dma_channel_set_read_addr(dma_chan, p, false);
 	dma_channel_set_transfer_count(dma_chan, pl, true);	
 }
