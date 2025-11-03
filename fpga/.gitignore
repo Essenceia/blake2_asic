@@ -1,7 +1,8 @@
-*.asc
-*.bin
-*.blif
-*.json
-*.gise
-*.xise
-_xmsgs
+.Xil/
+emulator/
+vivado.*
+vivado_*
+*.swp
+out
+usage_statistics_webtalk.*
+webtalk.*

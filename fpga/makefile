@@ -46,4 +46,4 @@ clean:
 	rm -f vivado*
 	rm -f webtalk*{log,jou}
 	rm -f usage_statistics_webtalk*{html,xml}
-	
+	rm -f hs_err*.log

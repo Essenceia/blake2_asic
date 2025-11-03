@@ -1,2 +1,0 @@
-NET "clk" TNM_NET = "clk";
-TIMESPEC "TS_clk" = PERIOD "clk" 20.00 ns HIGH 50%;
