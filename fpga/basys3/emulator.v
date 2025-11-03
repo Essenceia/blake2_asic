@@ -30,9 +30,10 @@ wire rst_async;
 reg rst_n_q, rst_n_d1_q;
 wire error;
  
-wire [7:0] ui_in;
+(* MARK_DEBUG = "true" *)wire [7:0] ui_in;
+(* MARK_DEBUG = "true" *)wire [7:0] uio_in; 
+
 wire [7:0] uo_out; 
-wire [7:0] uio_in; 
 (* MARK_DEBUG = "true" *) wire [7:0] uio_out;
 wire [7:0] uio_oe;
 wire [SWITCH_W-1:0] switch;
