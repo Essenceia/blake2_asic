@@ -89,7 +89,12 @@ set_property CONFIG_MODE SPIx4 [current_design]
 # assuming clk and data are affected by the same delay 
 # IOVDD at 3,3V according to the RP2040 datashete electrical 
 # characteristics of the pinnout, adding a bit extra for safety
-set_input_delay -clock [get_clocks clk_bus_i] -min 1.69 [get_ports -regexp data_.*]
-set_input_delay -clock [get_clocks clk_bus_i] -max 7.0 [get_ports -regexp data_.*]
+set_input_delay -clock [get_clocks clk_bus_i] -min 0.0 [get_ports -regexp data_.*]
+set_input_delay -clock [get_clocks clk_bus_i] -max 11.2 [get_ports -regexp data_.*]
+set_input_delay -clock [get_clocks clk_bus_i] -min 0.0 [get_ports -regexp loopback_ctrl_i.*]
+set_input_delay -clock [get_clocks clk_bus_i] -max 11.2 [get_ports -regexp loopback_ctrl_i.*]
+
+
+
 set_output_delay -clock [get_clocks clk_bus_i] -min -1.0 [get_ports -regexp hash.*]
 set_output_delay -clock [get_clocks clk_bus_i] -max 5.5 [get_ports -regexp hash.*]
