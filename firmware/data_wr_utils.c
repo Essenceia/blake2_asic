@@ -26,7 +26,7 @@ void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p
 	c.nn = nn > 32 ? 32: nn; 
 	c.ll = ll; 
 	config_to_pinout(&c, p, pl);
-	start_wr_dma_pinout_stream(p, pl ,dma_chan, pio, sm);	
+	start_wr_dma_pinout_stream(p, CONFIG_W ,dma_chan, pio, sm);	
 }
 
 // break data into blocks

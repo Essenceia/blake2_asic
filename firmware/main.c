@@ -101,8 +101,6 @@ int main() {
 	hard_assert(s);
 	clk_div = (float)clock_get_hz(clk_sys) / (BUS_PIO_CLK_FREQ_HZ); 
 	bus_clk_program_init(pio[PIO_CLK], sm[PIO_CLK], offset[PIO_CLK], BUS_CLK_PIN, clk_div);
-	gpio_set_drive_strength(BUS_CLK_PIN, GPIO_DRIVE_STRENGTH_12MA);
-	gpio_set_slew_rate(BUS_CLK_PIN, GPIO_SLEW_RATE_FAST);
 
 	/* sync program */
 	s &= pio_claim_free_sm_and_add_program(&sync_sm_program, &pio[PIO_SYNC], &sm[PIO_SYNC], &offset[PIO_SYNC]);
@@ -147,7 +145,7 @@ int main() {
 		tc = dma_hw->ch[rd_dma_chan].transfer_count; 
 	
 		/* config */
-		send_config(7, nn, 0xff00, wr_dma_chan, p, pl, pio[PIO_WR], sm[PIO_WR]);
+		send_config(0, nn, 3, wr_dma_chan, p, pl, pio[PIO_WR], sm[PIO_WR]);
 
 		/* setup dma hash read stream */
 		setup_rd_dma_hash_stream(rd_dma_chan, nn, hash_buffer, MAX_NN, pio[PIO_RD], sm[PIO_RD]);
