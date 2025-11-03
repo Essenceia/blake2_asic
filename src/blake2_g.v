@@ -5,8 +5,8 @@ module right_rot #(
 	parameter W=64
 	)
 	(
-	input  [W-1:0] data_i,
-	output [W-1:0] data_o
+	input wire  [W-1:0] data_i,
+	output wire [W-1:0] data_o
 	);
 	assign data_o[W-1:0] = { data_i[ROT_I-1:0], data_i[W-1:ROT_I]};
 endmodule
@@ -15,11 +15,11 @@ module adder_3way #(
 	parameter W=64
 	)
 	(
-	input [W-1:0] x0_i,
-	input [W-1:0] x1_i,
-	input [W-1:0] x2_i,
+	input wire [W-1:0] x0_i,
+	input wire [W-1:0] x1_i,
+	input wire [W-1:0] x2_i,
 	
-	output [W-1:0] y_o
+	output wire [W-1:0] y_o
 	);
 	wire         carry;
 	wire         unused_carry;
@@ -45,22 +45,22 @@ endmodule
 //      END FUNCTION.
 module G #(
 	parameter W=32,
-	parameter R1,
-	parameter R2,
-	parameter R3,
-	parameter R4
+	parameter R1=16,
+	parameter R2=12,
+	parameter R3=8,
+	parameter R4=7
 	)(
-	input [W-1:0]  a_i,
-	input [W-1:0]  b_i,
-	input [W-1:0]  c_i,
-	input [W-1:0]  d_i,
-	input [W-1:0]  x_i,
-	input [W-1:0]  y_i,
+	input wire [W-1:0]  a_i,
+	input wire [W-1:0]  b_i,
+	input wire [W-1:0]  c_i,
+	input wire [W-1:0]  d_i,
+	input wire [W-1:0]  x_i,
+	input wire [W-1:0]  y_i,
 
-	output [W-1:0] a_o,
-	output [W-1:0] b_o,
-	output [W-1:0] c_o,
-	output [W-1:0] d_o
+	output wire [W-1:0] a_o,
+	output wire [W-1:0] b_o,
+	output wire [W-1:0] c_o,
+	output wire [W-1:0] d_o
 	);
 	wire [W-1:0] a0;
 	wire [W-1:0] b0;
@@ -101,7 +101,7 @@ module G #(
 	// v[d] := (v[d] ^ v[a]) >>> R3
 	right_rot #(R3 , W) m_rot_2
 	(
-		.data_i((d0 ^ a0)),
+		.data_i((d0 ^ a_o)),
 		.data_o(d_o)
 	);
 

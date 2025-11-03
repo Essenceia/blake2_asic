@@ -7,55 +7,59 @@
 // Main blake2 module
 // default parameter configuration is for blake2b
 module blake2 #(	
-	parameter NN_b   = 8'b0100_0000, // hash size in binary, hash-512 : 8'b0100_0000, hash-256 : 8'b0010_0000
-	parameter NN_b_l = 8, // NN_b bit length
 	parameter W      = 64, 
 	parameter BB     = W*2,
-	parameter LL_b   = { {(W*2)-8{1'b0}}, 8'b10000000},
-	parameter F_b    = 1'b1, // final block flag
 	parameter R1     = 32, // rotation bits, used in G
 	parameter R2     = 24,
 	parameter R3     = 16,
 	parameter R4     = 63,
-	parameter R      = 4'd12, // 4'b1100 number of rounds in v srambling
-	localparam BB_CLOG2 = $clog2(BB),
-	localparam W_CLOG2 = $clog2(W)
+	parameter R      = 12, // Number of rounds in v srambling
+	parameter [3:0] R_LAST = R-1,
+	parameter BB_CLOG2   = $clog2(BB),
+	parameter W_CLOG2_P1 = $clog2((W+1)) // double paranthesis needed: verilator parsing bug
 	)
 	(
-	input               clk,
-	input               nreset,
+	input wire               clk,
+	input wire               nreset,
 
-	input [7:0]         kk_i,
-	input [7:0]         nn_i,
-	input [BB-1:0]      ll_i,
+	input wire [W_CLOG2_P1-1:0] kk_i,
+	input wire [W_CLOG2_P1-1:0] nn_i,
+	input wire [BB-1:0]         ll_i,
 
-	input wire          block_first_i,               
-	input wire          block_last_i,               
+	input wire             block_first_i,               
+	input wire             block_last_i,               
 	
-	input               data_v_i,
-	input [BB_CLOG2-1:0]  data_idx_i,	
-	input [7:0]         data_i,
-	
-	output       finished_o,
-	output [7:0] h_o
+	input wire                  data_v_i,
+	input wire [BB_CLOG2-1:0]   data_idx_i,	
+	input wire [7:0]            data_i,
+
+	output wire                 ready_v_o,	
+	output wire                 h_v_o,
+	output wire [7:0]           h_o
 	);
 	localparam IB_CNT_W = BB - $clog2(BB);
-	 
-	reg  [2:0] g_idx_q; // G function idx, sub-round
-	reg  [3:0] round_q;
+	localparam RND_W    = $clog2(R);
+	localparam G_RND_W  = $clog2(8);
+
+	(* MARK_DEBUG = "true" *)reg  [G_RND_W-1:0] g_idx_q; // G function idx, sub-round
+	(* MARK_DEBUG = "true" *)reg  [RND_W-1:0] round_q;
 
 	wire [BB-1:0]  t;	
-	reg  [IB_CNT_W-1:0]  block_idx_q;
+	reg  [IB_CNT_W-1:0]  block_idx_plus_one_q;
 
 	wire [W-1:0] v_init[15:0];
 	wire [W-1:0] v_init_2[15:0];
 	wire [W-1:0] v_current[15:0];
 	reg  [W-1:0] v_q[15:0];
+
 	wire [W-1:0] h_last[7:0];
-	wire [W*8-1:0] h_flat;
 	wire [W*8-1:0] h_shift_next;
 	wire [W-1:0] h_shift_next_matrix[7:0];
 	reg  [W-1:0] h_q[7:0];
+	/* verilator lint_off UNUSEDSIGNAL */
+	// bottom 8 bits expected to be unused
+	wire [W*8-1:0] h_flat;
+	/* verilator lint_on UNUSEDSIGNAL */
 	
 	reg  [W*16-1:0] m_q;
 	wire [W-1:0] m_matrix[15:0];
@@ -102,17 +106,18 @@ module blake2 #(
 	endgenerate
 
 	// fsm
+	localparam [2:0] S_IDLE = 3'd0;
+	localparam [2:0] S_WAIT_DATA = 3'd1;
+	localparam [2:0] S_F = 3'd2;
+	localparam [2:0] S_F_END = 3'd3; // write back h, save on mux on path to write back v to h
+	localparam [2:0] S_RES = 3'd4;
+
 	reg first_block_q; 
 	reg last_block_q; 
-	reg [2:0] fsm_q;
+	(* MARK_DEBUG = "true" *) reg [2:0] fsm_q;
 	wire f_finished;
-	reg [W_CLOG2-1:0] res_cnt_q;
-
-	localparam S_IDLE = 3'd0;
-	localparam S_WAIT_DATA = 3'd1;
-	localparam S_F = 3'd2;
-	localparam S_F_END = 3'd3; // write back h, save on mux on path to write back v to h
-	localparam S_RES = 3'd4;
+	reg [W_CLOG2_P1-1:0] res_cnt_q;
+	wire [W_CLOG2_P1-1:0] res_cnt_add;
 
 	always @(posedge clk) begin
 		if (~nreset) begin
@@ -123,7 +128,7 @@ module blake2 #(
 				S_WAIT_DATA: fsm_q <= (data_v_i & (data_idx_i == 6'd63))? S_F : S_WAIT_DATA;
 				S_F: fsm_q <= f_finished ? S_F_END : S_F;
 				S_F_END: fsm_q <= last_block_q ? S_RES : S_WAIT_DATA;
-				S_RES: fsm_q <= res_cnt_q == 'd31 ? S_IDLE: S_RES;
+				S_RES: fsm_q <= res_cnt_add == nn_i ? S_IDLE: S_RES;
 				default : fsm_q <= S_IDLE; 
 			endcase
 		end
@@ -149,25 +154,26 @@ module blake2 #(
 	reg unused_f_cnt_q;
 	always @(posedge clk) begin
 		case (fsm_q)
-			S_F: {unused_f_cnt_q, round_q, g_idx_q} <= {round_q, g_idx_q} + 'b1;
-			default: {round_q, g_idx_q} <= '0;
+			S_F: {unused_f_cnt_q, round_q, g_idx_q} <= {round_q, g_idx_q} + {{RND_W+G_RND_W-1{1'b0}}, 1'b1};
+			default: {round_q, g_idx_q} <= {RND_W+G_RND_W{1'b0}};
 		endcase
 	end
-	assign f_finished = {round_q, g_idx_q} == { R , 3'd7};
+	assign f_finished = {round_q, g_idx_q} == { R_LAST, 3'd7};
 
-	reg unused_block_idx_q;	
+	reg unused_block_idx_plus_one_q;	
 	always @(posedge clk) begin
 		if ( (fsm_q == S_IDLE) | (fsm_q == S_RES)) 
-			block_idx_q <= '0;
+			block_idx_plus_one_q <= {{IB_CNT_W-1{1'b0}}, 1'b1};
 		else 
-			{unused_block_idx_q, block_idx_q} <= block_idx_q + {{IB_CNT_W-1{1'b0}},1'd1};
+			{unused_block_idx_plus_one_q, block_idx_plus_one_q} <= block_idx_plus_one_q + {{IB_CNT_W-1{1'b0}},f_finished};
 	end
 
-	reg unused_res_cnt_q;
+	wire unused_res_cnt_add;
+	assign {unused_res_cnt_add, res_cnt_add} = res_cnt_q + {{W_CLOG2_P1-1{1'b0}}, 1'b1};
 	always @(posedge clk) begin
 		case(fsm_q)
-			S_RES: {unused_res_cnt_q, res_cnt_q} <= res_cnt_q + 'd1;
-			default: res_cnt_q <= '0;
+			S_RES: res_cnt_q <= res_cnt_add;
+			default: res_cnt_q <= {W_CLOG2_P1{1'b0}};
 		endcase
 	end
 
@@ -185,15 +191,16 @@ module blake2 #(
 	endgenerate
 	// Parameter block p[0]
 	// h[0] := h[0] ^ 0x01010000 ^ (kk << 8) ^ nn
-	assign h_init[0] = IV[0] ^ {{W-32{1'b0}},32'h01010000} ^ {{W-16{1'b0}},kk_i,{8{1'b0}}} ^ {{W-8{1'b0}} , nn_i};
-	
+	assign h_init[0] = IV[0] ^ {{W-32{1'b0}},32'h01010000} ^ {{W-W_CLOG2_P1-8{1'b0}},  kk_i ,{8{1'b0}}} ^ {{W-W_CLOG2_P1{1'b0}} , nn_i};
+	wire [W-1:0] debug_h_init0; 
+	assign debug_h_init0 = h_init[0];	
 
 	//----------
 	//
 	// Function F
 	//
 	// Calculate t, TODO block index increment
-	assign t = last_block_q ? ll_i: {block_idx_q, {BB_CLOG2{1'b0}}};
+	assign t = last_block_q ? ll_i: {block_idx_plus_one_q, {BB_CLOG2{1'b0}}};
 	//
 	// Initialize local work vector v[0..15]
 	// v[0..7]  := h[0..7]              // First half from state.
@@ -211,6 +218,14 @@ module blake2 #(
 	// IF f = TRUE THEN                // last block flag?
 	// |   v[14] := v[14] ^ 0xFF..FF   // Invert all bits.
 	// END IF.
+	wire [W-1:0] debug_v12, debug_v13, debug_v14, debug_v1, debug_v5, debug_v9;
+	assign debug_v1 = v_init_2[1];
+	assign debug_v5 = v_init_2[5];
+	assign debug_v9 = v_init_2[9];
+	assign debug_v12 = v_init_2[12];
+	assign debug_v13 = v_init_2[13];
+	assign debug_v14 = v_init_2[14];
+
 	assign v_init_2[12] = v_init[12] ^ t[W-1:0]; // Low word of the offset
 	assign v_init_2[13] = v_init[13] ^ t[2*W-1:W];// High word of the offset
 	assign v_init_2[14] = v_init[14] ^ {W{last_block_q}};
@@ -228,7 +243,7 @@ module blake2 #(
 	genvar v_idx;
 	generate
 		for(v_idx = 0; v_idx<16; v_idx=v_idx+1 ) begin : loop_v_idx
-			assign v_current[v_idx] = ((round_q == 'd0) & (g_idx_q < 'd4))? v_init_2[v_idx] : v_q[v_idx];
+			assign v_current[v_idx] = ((round_q == {RND_W{1'b0}}) & (g_idx_q < 3'd4))? v_init_2[v_idx] : v_q[v_idx];
 		end
 	endgenerate
 
@@ -246,6 +261,7 @@ module blake2 #(
 
 	reg  [W-1:0] g_a, g_b, g_c, g_d;
 	wire [W-1:0] g_x, g_y;
+	/* not using @(*) to work around xst limitation */
 	always @(*) begin 
 		case(g_idx_q[1:0])
 			0: g_a = v_current[0];
@@ -312,7 +328,7 @@ module blake2 #(
 	always @(*) begin
 		case(g_idx_q)
 			0: {g_x_idx, g_y_idx} = {sigma_row_elems[0], sigma_row_elems[1]};
-			1: {g_x_idx, g_y_idx} = {sigma_row_elems[2], sigma_row_elems[2]};
+			1: {g_x_idx, g_y_idx} = {sigma_row_elems[2], sigma_row_elems[3]};
 			2: {g_x_idx, g_y_idx} = {sigma_row_elems[4], sigma_row_elems[5]};
 			3: {g_x_idx, g_y_idx} = {sigma_row_elems[6], sigma_row_elems[7]};
 			4: {g_x_idx, g_y_idx} = {sigma_row_elems[8], sigma_row_elems[9]};
@@ -321,6 +337,9 @@ module blake2 #(
 			7: {g_x_idx, g_y_idx} = {sigma_row_elems[14], sigma_row_elems[15]};
 		endcase
 	end
+	wire [W-1:0] debug_m0, debug_m1;
+	assign debug_m0 = m_matrix[0];
+	assign debug_m1 = m_matrix[1];
 	assign g_x = m_matrix[g_x_idx];
 	assign g_y = m_matrix[g_y_idx];
 	
@@ -340,10 +359,13 @@ module blake2 #(
 		.d_o(d)
 	);
 
+	reg [W-1:0] debug_v_q0;
 	always @(posedge clk) begin
 		if (fsm_q == S_F) begin
 			if ((g_idx_q == 'd0) | (g_idx_q == 'd4))
 				v_q[0] <= a;
+			if ((g_idx_q == 'd0) | (g_idx_q == 'd4))
+				debug_v_q0 <= a;
 			if ((g_idx_q == 'd1) | (g_idx_q == 'd5))
 				v_q[1] <= a;	
 			if ((g_idx_q == 'd2) | (g_idx_q == 'd6))
@@ -411,13 +433,20 @@ module blake2 #(
 
 	assign h_shift_next = {8'b0, h_flat[W*8-1:8]};
 
+	// output 
+	
+	// ready 
+	assign ready_v_o = ((fsm_q == S_WAIT_DATA) | (fsm_q == S_IDLE));	
 
-
-	// output streaming
-	reg [7:0] h_o_q;
-	always @(posedge clk)
-		h_o_q <= h_q[0][7:0];
-	assign h_o = h_o_q;
-	assign finished_o = (fsm_q == S_RES);
+	// hash finished result streaming
+	// assert h_v_o one cycle early to trigger PR2040 PIO wait instruction 
+	(* MARK_DEBUG = "true" *) reg [7:0] res_q;
+	(* MARK_DEBUG = "true" *) reg       res_v_q;
+	always @(posedge clk) begin
+		res_q <= h_q[0][7:0];
+		res_v_q <= (fsm_q == S_RES) | ((fsm_q == S_F_END) & last_block_q);
+	end
+	assign h_v_o = res_v_q;
+	assign h_o = res_q;
 
 endmodule
