@@ -1,19 +1,16 @@
 .program data_rd
 
-.define PUBLIC CTRL_VALID_PIN 22
-
 init:
 	jmp loop
 data_rd:
-.wrap_target
 	in pins, 8
 	jmp pin data_rd
-.wrap
-	;push
+	push block
+.wrap_target
 loop:
-	irq wait 4
+	irq wait 4 [1]
 	jmp pin data_rd
-	jmp loop
+.wrap
 
 % c-sdk {
 static inline void data_rd_program_init(PIO pio, uint sm , uint offset, float fdiv){
@@ -29,23 +26,24 @@ static inline void data_rd_program_init(PIO pio, uint sm , uint offset, float fd
 	sm_config_set_in_pins(&c, HASH_BASE_PIN);
 
 	// fifo join
-	sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+	//sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
 	
 	// autopush : set to 32b, manually push at the end of
 	// hash in case hash length is not a modulo of 4
-	sm_config_set_in_shift(&c, true, true, 8);
+	sm_config_set_in_shift(&c, true, true, 32);
 
 	pio_sm_init(pio, sm, offset, &c);
 
 	// init gpio
 	for(uint i=HASH_BASE_PIN; i < HASH_BASE_PIN + DATA_W; i++){
 		pio_gpio_init(pio, i);
+		
 	}
 	pinmask |= DATA_MASK << HASH_BASE_PIN;
 
 	pio_gpio_init(pio, CTRL_HASH_VALID_PIN);
-	gpio_set_dir(CTRL_HASH_VALID_PIN, GPIO_IN);
-	gpio_disable_pulls(CTRL_HASH_VALID_PIN);
+	//gpio_set_dir(CTRL_HASH_VALID_PIN, GPIO_IN);
+	//gpio_disable_pulls(CTRL_HASH_VALID_PIN);
 	pinmask |= (uint32_t)0x1 << CTRL_HASH_VALID_PIN;
 	
 	pio_sm_set_pindirs_with_mask(pio, sm, pindirs, pinmask);

@@ -19,6 +19,7 @@
 #include "pio_utils.h" 
 
 #include "hardware/structs/dma_debug.h"
+#include "hardware/structs/dma.h"
 #include "hardware/structs/pio.h"
 #include "hardware/structs/sio.h"
 
@@ -53,12 +54,14 @@ int main() {
 	pinout_t *p;
 	bool s = true;
 	uint8_t random_data[BLOCK_W];
-	size_t pl = CONFIG_W + BLOCK_W;
+	size_t pl = BLOCK_W;
 	uint8_t hash_buffer[MAX_NN];
 
 	/* debug hw */
 	dma_debug_hw_t *debug_dma;
 	debug_dma = dma_debug_hw;
+	dma_hw_t* hw_dma; 
+	hw_dma = dma_hw;
 	sio_hw_t *debug_sio;
 	debug_sio = sio_hw;
 
@@ -125,7 +128,7 @@ int main() {
 	/* data rd */
 	uint rd_dma_chan = init_rd_dma_channel(pio[PIO_RD], sm[PIO_RD]);
 
-	uint32_t *tc = (uint32_t*)TRANSFER_COUNT_ADDR; 
+	uint32_t tc; 
 	uint tx_fifo_lvl, rx_fifo_lvl;
 	bool stalled;
 	uint8_t pio_pc;
@@ -141,6 +144,7 @@ int main() {
 		rx_fifo_lvl = pio_sm_get_rx_fifo_level(pio[PIO_RD], sm[PIO_RD]); 
 		stalled = pio_sm_is_exec_stalled(pio[PIO_WR], sm[PIO_WR]);
 		pio_pc = pio_sm_get_pc(pio[PIO_WR], sm[PIO_WR]);
+		tc = dma_hw->ch[rd_dma_chan].transfer_count; 
 	
 		/* config */
 		send_config(0, nn, 3, wr_dma_chan, p, pl);

@@ -97,6 +97,7 @@ uint init_wr_dma_channel(PIO pio, uint sm)
 	channel_config_set_write_increment(&c, false); // allways write to TX FIFO of the same PIO	
 	channel_config_set_dreq(&c, pio_get_dreq(pio, sm, true)); // trigger dreq when there is an empty entry in the TX FIFO
 	dma_channel_set_write_addr(dma_chan, &pio->txf[sm], false);
+	channel_config_set_enable(&c, false);
 	dma_channel_set_config(dma_chan, &c, false);
 	return dma_chan; 
 }
