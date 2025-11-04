@@ -20,6 +20,9 @@ DEBUG_FLAG := $(if $(debug), debug=1)
 DEFINES := $(if $(wave),wave=1)
 WAIVER_FILE := waiver.vlt
 FPGA_LIB:= lib
+
+.PHONY: firmware openocd gdb fpga fpga_prog lint lint_fpga
+
 ########
 # Lint #
 ########
@@ -90,11 +93,11 @@ gdb:
 #############
 # Build vivado project and run PnR, not generating bitstream or flashing
 fpga:
-	$(MAKE) -C $(FPGA_DIR) build
+	$(MAKE) -C $(FPGA_DIR) build $(DEBUG_FLAG)
 
 # Program the FPGA using a xilinx approved probe, no openocd config this time
 fpga_prog:
-	$(MAKE) -C $(FPGA_DIR) prog
+	$(MAKE) -C $(FPGA_DIR) prog $(DEBUG_FLAG)
 
 # Cleanup
 clean:
