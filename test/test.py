@@ -86,10 +86,10 @@ async def write_data_in(dut, block=b'', start=False, last=False):
     cocotb.log.debug("block %s", block)
     dut.uio_in.value = 0
     await ClockCycles(dut.clk, 1)
-    if(int(dut.m_io.ready_v_o.value) == 0):
-        await RisingEdge(dut.m_io.ready_v_o)
-    assert(int(dut.m_io.ready_v_o.value) == 1)
-    cocotb.log.debug("ready %s",dut.m_io.ready_v_o)
+    if(int(dut.ready_v.value) == 0):
+        await RisingEdge(dut.ready_v)
+    assert(int(dut.ready_v.value) == 1)
+    cocotb.log.debug("ready %s",dut.ready_v)
  
     for i in range(0,BB):
         if (random.randrange(0,100) > 75):
@@ -144,11 +144,11 @@ async def test_hash(dut, kk, nn, ll, key, data):
     await ClockCycles(dut.clk, 1)
     await send_data_to_hash(dut, key, data)
     cocotb.log.debug("waiting for hash v to rise")
-    await RisingEdge(dut.m_io.hash_v_o) 
+    await RisingEdge(dut.hash_v) 
     # one empty cycle, used for PIO wait instruction
     await ClockCycles(dut.clk, 2)
     res = b''
-    while (dut.m_io.hash_v_o.value == 1):
+    while (dut.hash_v.value == 1):
         x = dut.uo_out.value.to_unsigned()
         res = res + bytes([x])
         await ClockCycles(dut.clk, 1)

@@ -6,19 +6,18 @@
 */
 module tb ();
 
-  // Dump the signals to a VCD file. You can view it with gtkwave or surfer.
   initial begin
     $dumpfile("tb.vcd");
-    $dumpvars(0, tb);
+    $dumpvars(0, tb); // view all hierarchical levels
     #1;
   end
 
-  // Wire up the inputs and outputs:
-  reg clk;
-  reg rst_n;
-  reg ena;
-  reg [7:0] ui_in;
-  reg [7:0] uio_in;
+  // I/O
+  reg        clk;
+  reg        rst_n;
+  reg        ena;
+  reg  [7:0] ui_in;
+  reg  [7:0] uio_in;
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
@@ -27,10 +26,14 @@ module tb ();
   wire VGND = 1'b0;
 `endif
 
-  // Replace tt_um_factory_test with your module name:
+ // cocotb limitation
+  wire   ready_v;
+  wire   hash_v; 
+  assign ready_v = uio_out[3];
+  assign hash_v  = uio_out[7];
+
   tt_um_essen dut(
 
-      // Include power ports for the Gate Level test:
 `ifdef GL_TEST
       .VPWR(VPWR),
       .VGND(VGND),
