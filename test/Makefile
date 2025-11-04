@@ -5,8 +5,8 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_essen.v
-
+PROJECT_SOURCES = tt_um_essen.v blake2.v blake2_g.v blake2_hash.v io_inft.v
+  
 ifneq ($(GATES),yes)
 
 # RTL simulation:
