@@ -25,8 +25,8 @@ make lint
 ```
 
 For linting the FPGA design including the FPGA specific wrapping logic use `lint_fpga`. 
-This linting is done independantly of any FPGA tooling and requires only `verilator`. 
-The modules contained in the `lib` folder will be used a models for the FPGA specific macros such as 
+This linting is done independantly of any FPGA tooling and requires only `verilator/iverilog`. 
+and uses the content of the `lib` as models for the FPGA specific macros such as 
 `PLLE_BASE`. 
 ```
 make lint_fpga
@@ -86,16 +86,24 @@ embarks an official Xilinx supported JTAG probe directly on the board.
 The native presence of this probe will make debugging much more convergent as
 it will allow us to use the ILA debug cores. 
 
-To create the Vivado project and run synthesis and PnR :
+Scripts are provided to automatically the entire FPGA flow in the `fpga` folder. 
 ```
-make fpga
+cd fpga
 ```
 
-Write the bitstream over JTAG to the FPGA, this flow assumes you are using a xilinx approved
-probe that can be autodetected via Viavado. For flashing an FPGA using openocd refer to this article : [https://essenceia.github.io/projects/alibaba_cloud_fpga/](https://essenceia.github.io/projects/alibaba_cloud_fpga/)
-:warning: This is a volatile bitstream configuation as it doesn't write to the QSPI
+Create the Vivado project :
 ```
-make fpga_prog
+make setup
+```
+
+Run synthesis and PnR :
+```
+make build
+```
+
+Write the bitstream over JTAG to the FPGA ( this doesn't write to the QSPI ):
+```
+make prog
 ```
 
 ##### Debugging 
@@ -107,12 +115,12 @@ design for all signals with the `mark_debug` property and automatically :
 To invoke this debug mode, call make with the `debug=1` argument : 
 
 ```
-make fpga debug=1
+make build debug=1
 ```
 
 Or to both build and flash :
 ```
-make fpga_prog debug=1
+make prog debug=1
 ```
 
 See `debug_core.tcl` for more information on this part of the flow.
@@ -149,7 +157,7 @@ make build
 ##### Debugging
 
 For debugging the firmware we are using JLink connected via the SWD interface to the 
-PICO board. If this isn't your setup, please update the `firmware/openocd` tcl script. 
+PICO board. 
 Low level interfacing will be handled by OpenOCD and we will be using GDB for debugging. 
 
 To start OpenOCD and connect to the cores DAP: 
@@ -162,6 +170,25 @@ To start a new GDB session connected to this server :
 make gdb
 ```
 
+###### Flash new firmware over gdb
+
+To flash a new version of the firmware using gdb over openocd, first send an indiation to 
+halt the microcontroller to openocb : 
+```
+monitor reset halt
+```
+
+Then load a new binary, by default `make gdb` will provide the path to the `elf` ( `firmware/artifact/blake2s_asic_firmware.elf` ) when gdb is launched. 
+As such, there is no need to respecify the file. 
+```
+load
+```
+
+Then simply resume execution : 
+```
+c
+```
+
 ###### Remote GDB server 
 
 This setup doesn't assume the machine connected to the JTAG probe and the machine you will actually doing the debugging
@@ -172,7 +199,12 @@ starting gdb.
 make gdb GDB_SERVER_ADDR=192.168.0.145
 ```
 
-# ASIC
+## Documentation 
 
-For running the librealane flow locally in order to harden your design, please refer to the following 
-documentation : https://tinytapeout.com/guides/local-hardening/
+- Tiny Tapeout Official site : [https://www.tinytapeout.com/](https://www.tinytapeout.com/)
+- Blake2 spec RFC7693 : [doc/rfc7693.md](doc/rfc7693.md)
+
+## Credits
+
+Big thanks to the TinyTapout project contributors, Matt Venn, and all the cominuty working on open source silicon 
+tools for making this possible. 
