@@ -184,7 +184,7 @@ assign hash         = uo_out;
 assign hash_ctrl[1] = uio_out[7]; // hash_v
 assign hash_ctrl[0] = uio_out[3]; // ready
 
-top m_top(
+tt_um_essen m_top(
 	.ui_in(ui_in),
 	.uo_out(uo_out),
 	.uio_in(uio_in),

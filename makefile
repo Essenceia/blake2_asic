@@ -13,7 +13,8 @@ $(info Using simulator: $(SIM))
 # Global configs.
 FPGA_DIR := fpga
 SW_DIR := firmware
-TB_DIR := tb
+TB_DIR := test
+SRC_DIR := src
 CONF := conf
 DEBUG_FLAG := $(if $(debug), debug=1)
 DEFINES := $(if $(wave),wave=1)
@@ -53,11 +54,11 @@ endif
 # Lint #
 ########
 
-entry_deps := $(wildcard *.v)
-fpga_deps := $(entry_deps) $(wildcard fpga/*.v) $(wildcard fpga/basys3/*.v)
+entry_deps := $(wildcard $(SRC_DIR)/*.v)
+fpga_deps := $(entry_deps) $(wildcard $(FPGA_DIR)/*.v)
 
 lint: $(entry_deps)
-	$(call LINT,$^,top)
+	$(call LINT,$^,tt_um_essen)
 
 lint_fpga: $(fpga_deps)
 	$(call LINT,$^,emulator)
@@ -77,12 +78,23 @@ test:
 firmware:
 	$(MAKE) -C $(SW_DIR) build
 
+# start openocd, connect to RPi via JLink JTAG, start gdb server
+openocd:
+	$(MAKE) -C $(SW_DIR) debug
+
+gdb:
+	$(MAKE) -C $(SW_DIR) gdb
+
 #############
 # FPGA      #
 #############
 # Build vivado project and run PnR, not generating bitstream or flashing
 fpga:
 	$(MAKE) -C $(FPGA_DIR) build
+
+# Program the FPGA using a xilinx approved probe, no openocd config this time
+fpga_prog:
+	$(MAKE) -C $(FPGA_DIR) prog
 
 # Cleanup
 clean:
