@@ -1,19 +1,13 @@
 # Blake2s RTL implementation
 
-Implementation of the Blake2 cryptographic hash function (RFC7693) in 
+Implementation of the Blake2s cryptographic hash function (RFC7693) in 
 synthesizable RTL.
 
-This code was designed and tested for the smaller blake2s variants in order 
-to help reduce area, for a performance optimized blake2b implementation please reffer : 
-- https://github.com/Essenceia/blake2
-
-
-This is a fully featured blake2s implementation supporting both block streaming and 
+This is a fully featured Blake2s implementation supporting both block streaming and 
 proving the secret key. 
 
 It has been optimized for area usage ahead of an ASIC tapeout, at the 
-expense of performance. This design is current I/O bottlenecked as the block data
-interface is only 8 bits wide. 
+expense of some performance.  
 
 ![asic floorplan](/docs/layout.png)
 
@@ -25,14 +19,25 @@ make lint
 ```
 
 For linting the FPGA design including the FPGA specific wrapping logic use `lint_fpga`. 
-This linting is done independantly of any FPGA tooling and requires only `verilator/iverilog`. 
+This linting is done independently of any FPGA tooling and requires only `verilator/iverilog`. 
 and uses the content of the `lib` as models for the FPGA specific macros such as 
 `PLLE_BASE`. 
 ```
 make lint_fpga
 ```
 
-By default verilator will be used for linting, you can lint using iverilog using the `SIM` argument : 
+##### Waiver
+
+By default `verilator` will be using the following waivers for linting, these are provided in `conf/waiver.vlt`. 
+
+```
+lint_off -rule UNUSEDSIGNAL -file "*" -match "Signal is not used: 'debug_*"
+lint_off -file "lib/*" -match "*
+```
+
+##### Switch simulator 
+
+Given it's higher strictness `verilator` is used as the default linter. If you wish to switch you can select `iverilog` using the `SIM` argument : 
 ```
 make lint SIM=iverilog
 ```
@@ -64,11 +69,10 @@ tb to tapeout flows that also used `cocotb`.
 In order to help debug each step of the blake2s algorithm a more granular insight into the 
 values of the intermediary vectors at each step is very handy. 
 The test vector `tv` directory contains the `blake2s` implementation, as provided by the original
-specification instrumented with logging of intermediary values. 
+specification, instrumented with logging of intermediary values. 
 To build and run : 
 ```
-cd tb
-make run
+make tv
 ```
 
 ### Emulation 
@@ -127,9 +131,9 @@ See `debug_core.tcl` for more information on this part of the flow.
 
 #### Firmware
 
-For the software part of the emulation we are targetting the RP2040 microcontroller given 
+For the software part of the emulation we are targeting the RP2040 microcontroller given 
 it's PIO hardware allow us to implement support for the custom parallel bus protocols used
-to comunicate between the firmware and the hardware.
+to communicate between the firmware and the hardware.
 
 We are using the RaspberryPi PICO board given, again, it's large number of pins, and it's
 ease of access ( aka: next day shipping on amazon ). 
@@ -164,7 +168,7 @@ To start OpenOCD and connect to the cores DAP:
 ```
 make debug
 ```
-If this is sucessful openOCD will start a GDB server. 
+If this is successful openOCD will start a GDB server. 
 To start a new GDB session connected to this server : 
 ```
 make gdb
@@ -172,7 +176,7 @@ make gdb
 
 ###### Flash new firmware over gdb
 
-To flash a new version of the firmware using gdb over openocd, first send an indiation to 
+To flash a new version of the firmware using gdb over openocd, first send an indication to 
 halt the microcontroller to openocb : 
 ```
 monitor reset halt
@@ -206,5 +210,5 @@ make gdb GDB_SERVER_ADDR=192.168.0.145
 
 ## Credits
 
-Big thanks to the TinyTapout project contributors, Matt Venn, and all the cominuty working on open source silicon 
+Big thanks to the TinyTapout project contributors, Matt Venn, and all the community working on open source silicon 
 tools for making this possible. 

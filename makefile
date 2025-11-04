@@ -14,6 +14,7 @@ $(info Using simulator: $(SIM))
 FPGA_DIR := fpga
 SW_DIR := firmware
 TB_DIR := test
+TV_DIR := tv
 SRC_DIR := src
 CONF := conf
 DEBUG_FLAG := $(if $(debug), debug=1)
@@ -21,7 +22,7 @@ DEFINES := $(if $(wave),wave=1)
 WAIVER_FILE := waiver.vlt
 FPGA_LIB:= lib
 
-.PHONY: firmware openocd gdb fpga fpga_prog lint lint_fpga
+.PHONY: firmware openocd gdb fpga fpga_prog lint lint_fpga tv
 
 ########
 # Lint #
@@ -72,6 +73,13 @@ lint_fpga: $(fpga_deps)
 # Call cocotb
 test:
 	$(MAKE) -C $(TB_DIR)
+
+###############
+# Test vector #
+###############
+# Build and run test vector generation
+tv:
+	$(MAKE) -C $(TV_DIR) run
 
 
 #############

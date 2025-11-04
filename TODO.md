@@ -4,5 +4,12 @@
     - [x] in config 
 - [ ] add loopback test to tb
 - [x] figure out how to send out data over consequtive cycles 
-- [ ] fpga emulation 
-- [ ] formal emultions
+- [x] fpga emulation 
+~- [ ] formal emultions~ 
+- [ ] add excesively cute logo on top metal 
+- [ ] increase frequency ( g path cut in half ) 
+    - [ ] check increased area usage 
+- [ ] doc 
+    - [ ] main tt usage doc
+    - [ ] tb doc
+
