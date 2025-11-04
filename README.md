@@ -15,7 +15,7 @@ It has been optimized for area usage ahead of an ASIC tapeout, at the
 expense of performance. This design is current I/O bottlenecked as the block data
 interface is only 8 bits wide. 
 
-![asic floorplan](/doc/layout.png)
+![asic floorplan](/docs/layout.png)
 
 ## Lint
 
@@ -202,7 +202,7 @@ make gdb GDB_SERVER_ADDR=192.168.0.145
 ## Documentation 
 
 - Tiny Tapeout Official site : [https://www.tinytapeout.com/](https://www.tinytapeout.com/)
-- Blake2 spec RFC7693 : [doc/rfc7693.md](doc/rfc7693.md)
+- Blake2 spec RFC7693 : [docs/rfc7693.md](doc/rfc7693.md)
 
 ## Credits
 
