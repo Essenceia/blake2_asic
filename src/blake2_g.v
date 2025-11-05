@@ -50,6 +50,8 @@ module G #(
 	parameter R3=8,
 	parameter R4=7
 	)(
+	input wire clk,
+
 	input wire [W-1:0]  a_i,
 	input wire [W-1:0]  b_i,
 	input wire [W-1:0]  c_i,
@@ -68,6 +70,12 @@ module G #(
 	wire [W-1:0] d0;
 	wire unused_carry, unused_carry1;
 
+	reg [W-1:0] a_q;
+	reg [W-1:0] b_q;
+	reg [W-1:0] c_q;
+	reg [W-1:0] d_q;
+	reg [W-1:0] y_q;
+
 	// v[a] := (v[a] + v[b] + y) mod 2**w
 	adder_3way #(.W(W)) m_add_0(
 		.x0_i(a_i),
@@ -75,27 +83,36 @@ module G #(
 		.x2_i(x_i),
 		.y_o(a0)
 	);
+
+	always @(posedge clk) begin
+		a_q <= a0;
+		b_q <= b_i;
+		c_q <= c_i;
+		d_q <= d_i; 
+		y_q <= y_i; 
+	end
+
 	// v[d] := (v[d] ^ v[a]) >>> R1
 	right_rot #(R1 , W) m_rot_0
 	(
-		.data_i((d_i ^ a0)),
+		.data_i((d_q ^ a_q)),
 		.data_o(d0)
 	);
 	// v[c] := (v[c] + v[d])     mod 2**w
-	assign {unused_carry, c0} = c_i + d0;
+	assign {unused_carry, c0} = c_q + d0;
 	
 	// v[b] := (v[b] ^ v[c]) >>> R2
 	right_rot #(R2 , W) m_rot_1
 	(
-		.data_i((b_i ^ c0)),
+		.data_i((b_q ^ c0)),
 		.data_o(b0)
 	);
 	// v[a] := (v[a] + v[b] + y) mod 2**w
 	adder_3way #(.W(W)) m_add_1
 	(
-		.x0_i(a0),
+		.x0_i(a_q),
 		.x1_i(b0),
-		.x2_i(y_i),
+		.x2_i(y_q),
 		.y_o(a_o)
 	);
 	// v[d] := (v[d] ^ v[a]) >>> R3

@@ -347,6 +347,8 @@ module blake2 #(
 	
 	G #(.W(W), .R1(R1), .R2(R2), .R3(R3), .R4(R4)) 
 	m_g(
+		.clk(clk),
+
 		.a_i(g_a),
 		.b_i(g_b),
 		.c_i(g_c),
