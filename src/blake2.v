@@ -14,7 +14,7 @@ module blake2 #(
 	parameter R3     = 16,
 	parameter R4     = 63,
 	parameter R      = 12, // Number of rounds in v srambling
-	parameter [3:0] R_LAST = R-1,
+	parameter [3:0] R_LAST = R,
 	parameter BB_CLOG2   = $clog2(BB),
 	parameter W_CLOG2_P1 = $clog2((W+1)) // double paranthesis needed: verilator parsing bug
 	)
@@ -41,6 +41,7 @@ module blake2 #(
 	localparam RND_W    = $clog2(R);
 	localparam G_RND_W  = $clog2(8);
 
+	wire [G_RND_W-1:0] g_idx_next; // Finished sub round index
 	(* MARK_DEBUG = "true" *)reg  [G_RND_W-1:0] g_idx_q; // G function idx, sub-round
 	(* MARK_DEBUG = "true" *)reg  [RND_W-1:0] round_q;
 
@@ -151,14 +152,19 @@ module blake2 #(
 		endcase
 	end
 
+/* `inc_g_idx` is to hold g sub cycle 4 and 7 an extra cycle to leave v[15]/v[4] time to propegate as
+ * it is used in both g sub step 3->4/7->0. Just in case we needed another
+ * reminder that lake2 was not design for hardware. */
 	reg unused_f_cnt_q;
+	wire inc_g_idx;
+	assign inc_g_idx = ~((g_idx_next == 3'd3) | (g_idx_next == 3'd6)); 
 	always @(posedge clk) begin
 		case (fsm_q)
-			S_F: {unused_f_cnt_q, round_q, g_idx_q} <= {round_q, g_idx_q} + {{RND_W+G_RND_W-1{1'b0}}, 1'b1};
+			S_F: {unused_f_cnt_q, round_q, g_idx_q} <= {round_q, g_idx_q} + {{RND_W+G_RND_W-1{1'b0}}, inc_g_idx};
 			default: {round_q, g_idx_q} <= {RND_W+G_RND_W{1'b0}};
 		endcase
 	end
-	assign f_finished = {round_q, g_idx_q} == { R_LAST, 3'd7};
+	assign f_finished = {round_q, g_idx_next} == { R_LAST, 3'd7};
 
 	reg unused_block_idx_plus_one_q;	
 	always @(posedge clk) begin
@@ -348,6 +354,9 @@ module blake2 #(
 	G #(.W(W), .R1(R1), .R2(R2), .R3(R3), .R4(R4)) 
 	m_g(
 		.clk(clk),
+		
+		.g_idx_i(g_idx_q),
+		.g_idx_o(g_idx_next),
 
 		.a_i(g_a),
 		.b_i(g_b),
@@ -364,39 +373,39 @@ module blake2 #(
 	reg [W-1:0] debug_v_q0;
 	always @(posedge clk) begin
 		if (fsm_q == S_F) begin
-			if ((g_idx_q == 'd0) | (g_idx_q == 'd4))
+			if ((g_idx_next == 'd0) | (g_idx_next == 'd4))
 				v_q[0] <= a;
-			if ((g_idx_q == 'd0) | (g_idx_q == 'd4))
+			if ((g_idx_next == 'd0) | (g_idx_next == 'd4))
 				debug_v_q0 <= a;
-			if ((g_idx_q == 'd1) | (g_idx_q == 'd5))
+			if ((g_idx_next == 'd1) | (g_idx_next == 'd5))
 				v_q[1] <= a;	
-			if ((g_idx_q == 'd2) | (g_idx_q == 'd6))
+			if ((g_idx_next == 'd2) | (g_idx_next == 'd6))
 				v_q[2] <= a;		
-			if ((g_idx_q == 'd3) | (g_idx_q == 'd7))
+			if ((g_idx_next == 'd3) | (g_idx_next == 'd7))
 				v_q[3] <= a;
-			if ((g_idx_q == 'd0) | (g_idx_q == 'd7))
+			if ((g_idx_next == 'd0) | (g_idx_next == 'd7))
 				v_q[4] <= b;	
-			if ((g_idx_q == 'd1) | (g_idx_q == 'd4))
+			if ((g_idx_next == 'd1) | (g_idx_next == 'd4))
 				v_q[5] <= b;	
-			if ((g_idx_q == 'd2) | (g_idx_q == 'd5))
+			if ((g_idx_next == 'd2) | (g_idx_next == 'd5))
 				v_q[6] <= b;	
-			if ((g_idx_q == 'd3) | (g_idx_q == 'd6))
+			if ((g_idx_next == 'd3) | (g_idx_next == 'd6))
 				v_q[7] <= b;	
-			if ((g_idx_q == 'd0) | (g_idx_q == 'd6))
+			if ((g_idx_next == 'd0) | (g_idx_next == 'd6))
 				v_q[8] <= c;	
-			if ((g_idx_q == 'd1) | (g_idx_q == 'd7))
+			if ((g_idx_next == 'd1) | (g_idx_next == 'd7))
 				v_q[9] <= c;	
-			if ((g_idx_q == 'd2) | (g_idx_q == 'd4))
+			if ((g_idx_next == 'd2) | (g_idx_next == 'd4))
 				v_q[10] <= c;	
-			if ((g_idx_q == 'd3) | (g_idx_q == 'd5))
+			if ((g_idx_next == 'd3) | (g_idx_next == 'd5))
 				v_q[11] <= c;			
-			if ((g_idx_q == 'd0) | (g_idx_q == 'd5))
+			if ((g_idx_next == 'd0) | (g_idx_next == 'd5))
 				v_q[12] <= d;	
-			if ((g_idx_q == 'd1) | (g_idx_q == 'd6))
+			if ((g_idx_next == 'd1) | (g_idx_next == 'd6))
 				v_q[13] <= d;	
-			if ((g_idx_q == 'd2) | (g_idx_q == 'd7))
+			if ((g_idx_next == 'd2) | (g_idx_next == 'd7))
 				v_q[14] <= d;	
-			if ((g_idx_q == 'd3) | (g_idx_q == 'd4))
+			if ((g_idx_next == 'd3) | (g_idx_next == 'd4))
 				v_q[15] <= d;	
 		end	
 	end

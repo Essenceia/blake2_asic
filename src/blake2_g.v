@@ -48,9 +48,13 @@ module G #(
 	parameter R1=16,
 	parameter R2=12,
 	parameter R3=8,
-	parameter R4=7
+	parameter R4=7,
+	parameter IDX_W = 3
 	)(
 	input wire clk,
+	
+	input  wire [IDX_W-1:0] g_idx_i,
+	output wire [IDX_W-1:0] g_idx_o,
 
 	input wire [W-1:0]  a_i,
 	input wire [W-1:0]  b_i,
@@ -70,6 +74,7 @@ module G #(
 	wire [W-1:0] d0;
 	wire unused_carry, unused_carry1;
 
+	reg [IDX_W-1:0] g_idx_q;
 	reg [W-1:0] a_q;
 	reg [W-1:0] b_q;
 	reg [W-1:0] c_q;
@@ -85,6 +90,7 @@ module G #(
 	);
 
 	always @(posedge clk) begin
+		g_idx_q <= g_idx_i;
 		a_q <= a0;
 		b_q <= b_i;
 		c_q <= c_i;
@@ -132,4 +138,5 @@ module G #(
 		.data_o(b_o)
 	);
 
+	assign g_idx_o = g_idx_q;
 endmodule 
