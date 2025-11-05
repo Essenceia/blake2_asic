@@ -1,0 +1,53 @@
+[*]
+[*] GTKWave Analyzer v3.3.115 (w)1999-2023 BSI
+[*] Wed Nov  5 22:48:20 2025
+[*]
+[dumpfile] "/home/pitchu/rtl/asic/test/tb.vcd"
+[dumpfile_mtime] "Wed Nov  5 22:46:00 2025"
+[dumpfile_size] 16293730
+[savefile] "/home/pitchu/rtl/asic/test/tb.gtkw"
+[timestart] 0
+[size] 1910 470
+[pos] -1 -1
+*-38.000000 2015300000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.dut.
+[treeopen] tb.dut.m_blake2.
+[treeopen] tb.dut.m_blake2.m_hash256.
+[sst_width] 290
+[signals_width] 270
+[sst_expanded] 1
+[sst_vpaned_height] 111
+@28
+tb.dut.m_blake2.m_hash256.clk
+tb.dut.m_blake2.m_hash256.fsm_q[2:0]
+@24
+[color] 2
+tb.dut.m_blake2.m_hash256.g_idx_q[2:0]
+[color] 2
+tb.dut.m_blake2.m_hash256.g_idx_next[2:0]
+@22
+tb.dut.m_blake2.m_hash256.round_q[3:0]
+@28
+tb.dut.m_blake2.m_hash256.f_finished
+@22
+tb.dut.m_blake2.m_hash256.m_g.a_i[31:0]
+tb.dut.m_blake2.m_hash256.m_g.b_i[31:0]
+tb.dut.m_blake2.m_hash256.m_g.c_i[31:0]
+tb.dut.m_blake2.m_hash256.m_g.d_i[31:0]
+tb.dut.m_blake2.m_hash256.m_g.x_i[31:0]
+@23
+tb.dut.m_blake2.m_hash256.m_g.y_i[31:0]
+@24
+tb.dut.m_blake2.m_hash256.m_g.g_idx_i[2:0]
+@22
+tb.dut.m_blake2.m_hash256.m_g.a_o[31:0]
+tb.dut.m_blake2.m_hash256.m_g.b_o[31:0]
+tb.dut.m_blake2.m_hash256.m_g.c_o[31:0]
+tb.dut.m_blake2.m_hash256.m_g.d_o[31:0]
+@24
+tb.dut.m_blake2.m_hash256.m_g.g_idx_o[2:0]
+@28
+tb.dut.m_blake2.m_hash256.inc_g_idx
+[pattern_trace] 1
+[pattern_trace] 0
