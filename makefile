@@ -22,7 +22,7 @@ DEFINES := $(if $(wave),wave=1)
 WAIVER_FILE := waiver.vlt
 FPGA_LIB:= lib
 
-.PHONY: firmware openocd gdb fpga fpga_prog lint lint_fpga tv
+.PHONY: firmware openocd gdb fpga fpga_prog lint lint_fpga tv test
 
 ########
 # Lint #

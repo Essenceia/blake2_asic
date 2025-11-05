@@ -19,6 +19,7 @@ make lint
 ```
 
 For linting the FPGA design including the FPGA specific wrapping logic use `lint_fpga`. 
+
 This linting is done independently of any FPGA tooling and requires only `verilator/iverilog`. 
 and uses the content of the `lib` as models for the FPGA specific macros such as 
 `PLLE_BASE`. 
@@ -70,6 +71,7 @@ In order to help debug each step of the blake2s algorithm a more granular insigh
 values of the intermediary vectors at each step is very handy. 
 The test vector `tv` directory contains the `blake2s` implementation, as provided by the original
 specification, instrumented with logging of intermediary values. 
+
 To build and run : 
 ```
 make tv
@@ -87,6 +89,7 @@ firmware.
 For emulating the design, we are using a `basys3` FPGA board because of the
 large number of pinnouts provided by it's 4 Pmod connectors and because it
 embarks an official Xilinx supported JTAG probe directly on the board. 
+
 The native presence of this probe will make debugging much more convergent as
 it will allow us to use the ILA debug cores. 
 
@@ -116,6 +119,7 @@ Optionally, the flow also includes a debug option that will automatically scan t
 design for all signals with the `mark_debug` property and automatically : 
 - create a ILA debug core
 - connect all signals marked for debug to it
+
 To invoke this debug mode, call make with the `debug=1` argument : 
 
 ```
@@ -196,7 +200,9 @@ c
 ###### Remote GDB server 
 
 This setup doesn't assume the machine connected to the JTAG probe and the machine you will actually doing the debugging
-on are the same machines. In case this is the case of your setup and you are indeed using different machines,
+on are the same machines.
+
+In case this is the case of your setup and you are indeed using different machines,
 you simply provide the IP address of the machine running your GDB server using the `GDB_SERVER_ADDR=X.X.X.X` when 
 starting gdb. 
 ```
