@@ -13,7 +13,7 @@ VIVADO_BIT_PATH=$(VIVADO_PRJ_DIR)/$(VIVADO_PRJ_NAME).svf
 
 VIVADO_CMD=vivado -mode batch -source
 
-SRC_PATH=..
+SRC_PATH=../src
 
 
 .PHONY: setup build prog gui
