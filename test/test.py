@@ -85,7 +85,7 @@ async def write_data_in(dut, block=b'', start=False, last=False):
     assert(len(block) == BB )
     cocotb.log.debug("block %s", block)
     dut.uio_in.value = 0
-    await ClockCycles(dut.clk, 1)
+    await ClockCycles(dut.clk, 2)
     if(int(dut.ready_v.value) == 0):
         await RisingEdge(dut.ready_v)
     assert(int(dut.ready_v.value) == 1)
