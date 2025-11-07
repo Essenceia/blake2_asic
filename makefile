@@ -72,7 +72,7 @@ lint_fpga: $(fpga_deps)
 #############
 # Call cocotb
 test:
-	$(MAKE) -C $(TB_DIR)
+	$(MAKE) -C $(TB_DIR) WAVES=1
 
 ###############
 # Test vector #
@@ -80,7 +80,6 @@ test:
 # Build and run test vector generation
 tv:
 	$(MAKE) -C $(TV_DIR) run
-
 
 #############
 # Firmware  #
