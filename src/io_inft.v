@@ -177,23 +177,39 @@ module io_intf(
 	reg        ready_v_q;
 	reg        hash_v_q;
 	reg  [7:0] hash_q;
+	reg        valid_q;
+	reg  [7:0] data_q;
+	reg  [7:0] cmd_q;
  
-	// use project slice enable to gate design in order 
-	// to help reduce overall tt chip dynamic power 
-	// aka: play nice with other projects and be a responsible
-	//      project participant
+	// design is power gated, but still play nice in
+	// terms of dynamic power
 	reg en_q;
 	wire valid; 
 	always @(posedge clk) 
-		en_q <= en_i;
-	assign valid = en_q & valid_i;
+		if (~nreset)
+			en_q <= 1'b-;
+		else
+			en_q <= en_i;
+
+	// flop input data
+	always @(posedge clk) 
+		if (~nreset | ~en_q) begin
+			valid_q <= 1'b0;
+			data_q <= 8'b0;
+			cmd_q <= 8'b0; 
+		end else begin
+			valid_q <= valid_i;
+			cmd_q <= cmd_i;
+			data_q <= data_i;
+		end
+	end
 
 	byte_size_config m_config(
 		.clk(clk),
 		.nreset(nreset),
-		.valid_i(valid),
-		.cmd_i(cmd_i),
-		.data_i(data_i),
+		.valid_i(valid_q),
+		.cmd_i(cmd_q),
+		.data_i(data_q),
 
 		.kk_o(kk_o),
 		.nn_o(nn_o),
@@ -204,8 +220,8 @@ module io_intf(
 		.clk(clk), 
 		.nreset(nreset), 
 		.valid_i(valid),
-		.cmd_i(cmd_i),
-		.data_i(data_i),
+		.cmd_i(cmd_q),
+		.data_i(data_q),
 
 	 	.data_v_o(data_v_o),
 	 	.data_o(data_o),
@@ -222,7 +238,7 @@ module io_intf(
 
 	assign slow_output_o = output_mode_q == OUTPUT_SLOW;
 	
-	assign cmd = {2'b0, output_mode_q, 1'b0, cmd_i, valid_i}; // rebuild cmd
+	assign cmd = {2'b0, output_mode_q, 1'b0, cmd_q, valid_q}; // rebuild cmd
 
 	// flop data just before output as there is a weak driver from this 
 	// hardware tile to the GPIO output buffer and the path has a slow skew 
@@ -232,7 +248,7 @@ module io_intf(
 		hash_v_q  <= hash_v_i;
 		case(output_mode_q)
 			OUTPUT_DEFAULT, OUTPUT_SLOW: hash_q <= hash_i;
-			OUTPUT_LOOPBACK_DATA: hash_q <= data_i;
+			OUTPUT_LOOPBACK_DATA: hash_q <= data_q;
 			OUTPUT_LOOPBACK_CTRL: hash_q <= cmd;
 		endcase
 	end
