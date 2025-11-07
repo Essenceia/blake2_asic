@@ -146,7 +146,7 @@ async def send_data_to_hash(dut, key=b'', data=b'', slow=False):
 # blake2s result.
 # if `slow` mode is activated results will be sent out over
 # twice the amount of cycles
-async def test_hash(dut, kk, nn, ll, key, data, slow = False):
+async def test_hash(dut, kk, nn, ll, key, data, slow=False):
     h = hashlib.blake2s(data, digest_size=nn, key=key)
     
     assert(kk == len(key))
@@ -184,13 +184,13 @@ async def test_hash(dut, kk, nn, ll, key, data, slow = False):
 # Generate random configs, keys and input data for testing. 
 # Data max size was reduced from theoretical supported
 # maximum of 2^64 for testing feasability. 
-async def test_random_hash(dut):
+async def test_random_hash(dut, slow=False):
     ll = random.randrange(1,2500)
     nn = random.randrange(1,33)
     kk = random.randrange(1,33)
     key = random.randbytes(kk)
     data = random.randbytes(ll)
-    await test_hash(dut, kk, nn, ll, key, data)
+    await test_hash(dut, kk, nn, ll, key, data, slow)
 
 # Reset sequence
 async def rst(dut, ena=1):
@@ -244,5 +244,15 @@ async def hash_spec_test(dut):
 async def hash_test(dut):
     await rst(dut)
     await ClockCycles(dut.clk, 2)
-    for _ in range(0, 50):
+    for _ in range(0, 1):
         await test_random_hash(dut)
+
+@cocotb.test()
+async def slow_output_test(dut):
+    await rst(dut)
+    await ClockCycles(dut.clk, 2)
+    for _ in range(0, 50):
+        await test_random_hash(dut, slow=True)
+
+
+
