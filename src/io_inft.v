@@ -170,7 +170,7 @@ module io_intf(
 );
 	localparam [1:0] OUTPUT_DEFAULT       = 2'b00;
 	localparam [1:0] OUTPUT_LOOPBACK_DATA = 2'b01;
-	localparam [1:0] OUTLOUT_LOOPBACK_CTRL= 2'b10;
+	localparam [1:0] OUTPUT_LOOPBACK_CTRL = 2'b10;
 	localparam [1:0] OUTPUT_SLOW          = 2'b11;
 	reg  [1:0] output_mode_q;
 	wire [7:0] cmd;
@@ -220,7 +220,7 @@ module io_intf(
 		else if(en_q)
 			output_mode_q <= output_mode_i;
 
-	assign slow_output_o <= output_mode_q == OUTPUT_SLOW;
+	assign slow_output_o = output_mode_q == OUTPUT_SLOW;
 	
 	assign cmd = {2'b0, output_mode_q, 1'b0, cmd_i, valid_i}; // rebuild cmd
 
@@ -230,11 +230,10 @@ module io_intf(
 	always @(posedge clk) begin
 		ready_v_q <= ready_v_i & ~data_v_o;
 		hash_v_q  <= hash_v_i;
-		case(output_mode_q) begin
+		case(output_mode_q)
 			OUTPUT_DEFAULT, OUTPUT_SLOW: hash_q <= hash_i;
 			OUTPUT_LOOPBACK_DATA: hash_q <= data_i;
 			OUTPUT_LOOPBACK_CTRL: hash_q <= cmd;
-		
 		endcase
 	end
 	// to output pins
