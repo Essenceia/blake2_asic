@@ -468,7 +468,7 @@ module blake2 #(
 
 	// hash finished result streaming
 	// assert h_v_o one ( or two of slow output enabled ) cycle early to trigger PR2040 PIO wait instruction 
-	assign	h_v_o = h_q[0][7:0];
-	assign	h_o   = (fsm_q == S_RES) | ((fsm_q == S_F_END) & last_block_q) | (fsm_q == S_F_END_2);
+	assign	h_o   = h_q[0][7:0];
+	assign	h_v_o = (fsm_q == S_RES) | ((fsm_q == S_F_END) & last_block_q) | (fsm_q == S_F_END_2);
 
 endmodule

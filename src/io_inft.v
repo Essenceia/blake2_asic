@@ -63,6 +63,8 @@ module block_data(
 	input wire [1:0] cmd_i,
 	input wire [7:0] data_i,
 
+	output wire         data_v_early_o,
+
 	output wire         data_v_o,
 	output wire [7:0]   data_o,
 	output wire [5:0]   data_idx_o,
@@ -128,6 +130,8 @@ module block_data(
 			last_q <= last_v;
 	end
 
+	assign data_v_early_o = data_v;
+
 	assign data_v_o      = data_v_q;
 	assign data_o        = data_q;
 	assign data_idx_o    = data_idx_q;
@@ -174,33 +178,32 @@ module io_intf(
 	localparam [1:0] OUTPUT_SLOW          = 2'b11;
 	reg  [1:0] output_mode_q;
 	wire [7:0] cmd;
-	reg        ready_v_q;
 	reg        hash_v_q;
 	reg  [7:0] hash_q;
 	reg        valid_q;
 	reg  [7:0] data_q;
-	reg  [7:0] cmd_q;
+	reg  [1:0] cmd_q;
+	wire       data_v_early;
  
 	// design is power gated, but still play nice in
 	// terms of dynamic power
 	reg en_q;
-	wire valid; 
 	always @(posedge clk) 
 		if (~nreset)
-			en_q <= 1'b-;
+			en_q <= 1'b1;
 		else
 			en_q <= en_i;
 
 	// flop input data
-	always @(posedge clk) 
+	always @(posedge clk) begin 
 		if (~nreset | ~en_q) begin
 			valid_q <= 1'b0;
-			data_q <= 8'b0;
-			cmd_q <= 8'b0; 
+			data_q  <= 8'b0;
+			cmd_q   <= 2'b0; 
 		end else begin
 			valid_q <= valid_i;
-			cmd_q <= cmd_i;
-			data_q <= data_i;
+			cmd_q   <= cmd_i;
+			data_q  <= data_i;
 		end
 	end
 
@@ -219,9 +222,11 @@ module io_intf(
 	block_data m_block_data(
 		.clk(clk), 
 		.nreset(nreset), 
-		.valid_i(valid),
+		.valid_i(valid_q),
 		.cmd_i(cmd_q),
 		.data_i(data_q),
+		
+		.data_v_early_o(data_v_early),
 
 	 	.data_v_o(data_v_o),
 	 	.data_o(data_o),
@@ -244,7 +249,6 @@ module io_intf(
 	// hardware tile to the GPIO output buffer and the path has a slow skew 
 	// maximize available propagation time per cycle
 	always @(posedge clk) begin
-		ready_v_q <= ready_v_i & ~data_v_o;
 		hash_v_q  <= hash_v_i;
 		case(output_mode_q)
 			OUTPUT_DEFAULT, OUTPUT_SLOW: hash_q <= hash_i;
@@ -253,7 +257,7 @@ module io_intf(
 		endcase
 	end
 	// to output pins
-	assign ready_v_o = ready_v_q;
+	assign ready_v_o = ready_v_i & ~data_v_o;
 	assign hash_v_o = hash_v_q;
 	assign hash_o = hash_q; 
 endmodule
