@@ -13,12 +13,20 @@ BB=64 # Number of bytes in a data block, constant set by blake2s spec
 # Generate data command configuration, sent allong each valid data
 # transfer data cycle to convay metadata about the data. 
 #
+# cmd
 # value - meaning
 #     0 - hash configuration data, setting: kk, nn, ll
 #     1 - first/start, part of the first block of the data to be hashed
 #     2 - data to be hashed
 #     3 - finish/last, part of the last block of data to be hashed
-def get_cmd(valid=True, conf=False, start=False, data=False, last=False):
+#
+# output mode
+# value - meaning
+#     0 - default
+#     1 - data loopback
+#     2 - ctrl loopback
+#     3 - slow output  
+def get_cmd(valid=True, conf=False, start=False, data=False, last=False, slow=False):
     check = [conf, start, data, last]
     assert(sum(check) == 1) # check one hot 0
     if (conf):
@@ -29,7 +37,10 @@ def get_cmd(valid=True, conf=False, start=False, data=False, last=False):
         cmd = 2
     elif (last):
         cmd = 3
-    return valid | cmd << 1
+
+    out_mode = 3 if slow else 0
+
+    return valid | cmd << 1 | out_mode << 4
    
  
 # Dissable data transfert for "cycles" cycles.
@@ -81,7 +92,7 @@ async def write_config(dut, kk, nn, ll):
 # both the first and last command will be set on the block.
 # Adding empty transfer cycles to increase verification stress, 
 # see above for reasonging.  
-async def write_data_in(dut, block=b'', start=False, last=False):
+async def write_data_in(dut, block=b'', start=False, last=False, slow=False):
     assert(len(block) == BB )
     cocotb.log.debug("block %s", block)
     dut.uio_in.value = 0
@@ -94,12 +105,12 @@ async def write_data_in(dut, block=b'', start=False, last=False):
     for i in range(0,BB):
         if (random.randrange(0,100) > 75):
             await invalid_data(dut, random.randrange(1,5))
-        dut.uio_in.value = get_cmd(data=True)
+        dut.uio_in.value = get_cmd(data=True, slow=slow)
         if (i == 0) and start: 
-            dut.uio_in.value = get_cmd(start=True)
+            dut.uio_in.value = get_cmd(start=True, slow=slow)
         if (i == BB - 1) and last:
             cocotb.log.debug("last") 
-            dut.uio_in.value = get_cmd(last=True)
+            dut.uio_in.value = get_cmd(last=True, slow=slow)
         dut.ui_in.value = block[i]
         await ClockCycles(dut.clk, 1)
     dut.uio_in.value = 0
@@ -108,7 +119,7 @@ async def write_data_in(dut, block=b'', start=False, last=False):
 # blocks to be sent out. 
 # If a key is providided it will be 0 extended and it's value
 # as the first data block.
-async def send_data_to_hash(dut, key=b'', data=b''):
+async def send_data_to_hash(dut, key=b'', data=b'', slow=False):
     cocotb.log.debug("write_data key(%s) data(%s)", len(key), len(data))
     start = True
     last = False
@@ -118,7 +129,7 @@ async def send_data_to_hash(dut, key=b'', data=b''):
         assert (len(key) <= BB/2)
         tmp = key.ljust(BB, b'\x00')
         cocotb.log.debug("key %s", len(tmp))
-        await write_data_in(dut, tmp, start, False) 
+        await write_data_in(dut, tmp, start, False, slow) 
         start = False
 
     block_count = math.ceil(len(data)/BB)
@@ -127,31 +138,43 @@ async def send_data_to_hash(dut, key=b'', data=b''):
     for i in range(0, block_count):
         if ( i == block_count - 1): 
             last=True
-        await write_data_in(dut, padded_data[i*BB:((i+1)*BB)], start, last)
+        await write_data_in(dut, padded_data[i*BB:((i+1)*BB)], start, last, slow)
         start = False
 
 # Main test function, writes out configs, key and data, 
 # accumulates result and compares it against libhash's
 # blake2s result.
-async def test_hash(dut, kk, nn, ll, key, data):
+# if `slow` mode is activated results will be sent out over
+# twice the amount of cycles
+async def test_hash(dut, kk, nn, ll, key, data, slow = False):
     h = hashlib.blake2s(data, digest_size=nn, key=key)
+    
     assert(kk == len(key))
     assert(ll == len(data))
     cocotb.log.info("key [0:%s-1]: 0x%s", kk, key.hex())
     cocotb.log.info("hash[0:%s-1]: 0x%s", nn, h.hexdigest())
     cocotb.log.info("data[0:%s-1]: 0x%s", ll, data.hex())
     await write_config(dut, kk, nn , ll)
+
     await ClockCycles(dut.clk, 1)
-    await send_data_to_hash(dut, key, data)
+    await send_data_to_hash(dut, key, data, slow)
     cocotb.log.debug("waiting for hash v to rise")
+
     await RisingEdge(dut.hash_v) 
-    # one empty cycle, used for PIO wait instruction
-    await ClockCycles(dut.clk, 2)
+    await ClockCycles(dut.clk, 1)
+    # one ( or two ) empty cycles, used for PIO wait instruction
+    if slow:
+        res_cycle = 2
+        
+    else:
+        res_cycle = 1    
+    await ClockCycles(dut.clk, res_cycle)
+    
     res = b''
     while (dut.hash_v.value == 1):
         x = dut.uo_out.value.to_unsigned()
         res = res + bytes([x])
-        await ClockCycles(dut.clk, 1)
+        await ClockCycles(dut.clk, res_cycle)
     cocotb.log.debug("res 0x%s'", res.hex())
     cocotb.log.debug("h   0x%s'", h.hexdigest())
     cocotb.log.debug("%s %s",len(res.hex()),len(h.hexdigest()))
