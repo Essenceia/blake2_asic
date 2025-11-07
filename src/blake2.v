@@ -19,15 +19,16 @@ module blake2 #(
 	parameter W_CLOG2_P1 = $clog2((W+1)) // double paranthesis needed: verilator parsing bug
 	)
 	(
-	input wire               clk,
-	input wire               nreset,
+	input wire                  clk,
+	input wire                  nreset,
 
 	input wire [W_CLOG2_P1-1:0] kk_i,
 	input wire [W_CLOG2_P1-1:0] nn_i,
 	input wire [BB-1:0]         ll_i,
 
-	input wire             block_first_i,               
-	input wire             block_last_i,               
+	input wire                  block_first_i,               
+	input wire                  block_last_i,   
+	input wire                  slow_output_i,            
 	
 	input wire                  data_v_i,
 	input wire [BB_CLOG2-1:0]   data_idx_i,	
@@ -111,10 +112,12 @@ module blake2 #(
 	localparam [2:0] S_WAIT_DATA = 3'd1;
 	localparam [2:0] S_F = 3'd2;
 	localparam [2:0] S_F_END = 3'd3; // write back h, save on mux on path to write back v to h
-	localparam [2:0] S_RES = 3'd4;
+	localparam [2:0] S_F_END_2 = 3'd4; // extra cycle on slow out
+	localparam [2:0] S_RES = 3'd5;
 
 	reg first_block_q; 
 	reg last_block_q; 
+	reg slow_output_q; 
 	(* MARK_DEBUG = "true" *) reg [2:0] fsm_q;
 	wire f_finished;
 	reg [W_CLOG2_P1-1:0] res_cnt_q;
@@ -128,7 +131,8 @@ module blake2 #(
 				S_IDLE: fsm_q <= data_v_i ? S_WAIT_DATA: S_IDLE;
 				S_WAIT_DATA: fsm_q <= (data_v_i & (data_idx_i == 6'd63))? S_F : S_WAIT_DATA;
 				S_F: fsm_q <= f_finished ? S_F_END : S_F;
-				S_F_END: fsm_q <= last_block_q ? S_RES : S_WAIT_DATA;
+				S_F_END: fsm_q <= last_block_q ? (slow_output_q ? S_F_END_2 : S_RES ): S_WAIT_DATA;
+				S_F_END_2: fsm_q <= S_RES;
 				S_RES: fsm_q <= res_cnt_add == nn_i ? S_IDLE: S_RES;
 				default : fsm_q <= S_IDLE; 
 			endcase
@@ -140,14 +144,17 @@ module blake2 #(
 			S_WAIT_DATA: begin
 				first_block_q <= data_v_i ? block_first_i : first_block_q;
 				last_block_q <= data_v_i ? block_last_i : last_block_q;
+				slow_output_q <= slow_output_i;
 			end
-			S_F, S_F_END: begin
+			S_F, S_F_END, S_F_END_2: begin
 				first_block_q <= first_block_q;
 				last_block_q <= last_block_q;
+				slow_output_q <= slow_output_q;
 			end
 			default: begin
 				first_block_q <= 1'b0;
 				last_block_q <= 1'b0;
+				slow_output_q <= 1'b0;
 			end
 		endcase
 	end
@@ -175,7 +182,17 @@ module blake2 #(
 	end
 
 	wire unused_res_cnt_add;
-	assign {unused_res_cnt_add, res_cnt_add} = res_cnt_q + {{W_CLOG2_P1-1{1'b0}}, 1'b1};
+	reg res_inc_q; 
+	/* increments by 1 if slow ioutput isn't enabled, else 
+ 	*  output each 8b hash output over 2 cycles */
+	always @(posedge clk) begin
+		case(fsm_q)
+			S_F_END : res_inc_q <= 1'b1;
+			default: res_inc_q <= res_inc_q ^ ~slow_output_q;
+		endcase
+	end
+	
+	assign {unused_res_cnt_add, res_cnt_add} = res_cnt_q + {{W_CLOG2_P1-1{1'b0}}, res_inc_q};
 	always @(posedge clk) begin
 		case(fsm_q)
 			S_RES: res_cnt_q <= res_cnt_add;
@@ -205,7 +222,7 @@ module blake2 #(
 	//
 	// Function F
 	//
-	// Calculate t, TODO block index increment
+	// Calculate t
 	assign t = last_block_q ? ll_i: {block_idx_plus_one_q, {BB_CLOG2{1'b0}}};
 	//
 	// Initialize local work vector v[0..15]
@@ -455,7 +472,7 @@ module blake2 #(
 	(* MARK_DEBUG = "true" *) reg       res_v_q;
 	always @(posedge clk) begin
 		res_q <= h_q[0][7:0];
-		res_v_q <= (fsm_q == S_RES) | ((fsm_q == S_F_END) & last_block_q);
+		res_v_q <= (fsm_q == S_RES) | ((fsm_q == S_F_END) & last_block_q) | (fsm_q == S_F_END_2);
 	end
 	assign h_v_o = res_v_q;
 	assign h_o = res_q;

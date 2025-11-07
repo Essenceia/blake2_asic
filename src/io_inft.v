@@ -146,7 +146,7 @@ module io_intf(
 	input wire [1:0] cmd_i,
 	input wire [7:0] data_i,
 
-	input wire [1:0] loopback_mode_i,
+	input wire [1:0] output_mode_i,
 
 	output wire       ready_v_o,
 	output wire       hash_v_o,
@@ -165,16 +165,18 @@ module io_intf(
 	output wire [7:0] data_o,
 	output wire [5:0] data_idx_o,
 	output wire       block_first_o,
-	output wire       block_last_o
+	output wire       block_last_o,
+	output wire       slow_output_o
 );
-	localparam [1:0] LOOPBACK_NONE   = 2'b00;
-	localparam [1:0] LOOPBACK_DATA   = 2'b01;
-/* verilator lint_off UNUSEDPARAM */
-	localparam [1:0] LOOPBACK_CTRL   = 2'b10;
-	localparam [1:0] LOOPBACK_CTRL_2 = 2'b11;
-/* verilator lint_on UNUSEDPARAM */
-	reg [1:0] loopback_mode_q;
+	localparam [1:0] OUTPUT_DEFAULT       = 2'b00;
+	localparam [1:0] OUTPUT_LOOPBACK_DATA = 2'b01;
+	localparam [1:0] OUTLOUT_LOOPBACK_CTRL= 2'b10;
+	localparam [1:0] OUTPUT_SLOW          = 2'b11;
+	reg  [1:0] output_mode_q;
 	wire [7:0] cmd;
+	reg        ready_v_q;
+	reg        hash_v_q;
+	reg  [7:0] hash_q;
  
 	// use project slice enable to gate design in order 
 	// to help reduce overall tt chip dynamic power 
@@ -214,14 +216,29 @@ module io_intf(
 	// loopback mode 
 	always @(posedge clk) 
 		if (~nreset)
-			loopback_mode_q <= LOOPBACK_NONE;
+			output_mode_q <= OUTPUT_DEFAULT;
 		else if(en_q)
-			loopback_mode_q <= loopback_mode_i;
-	
-	assign cmd = {2'b0, loopback_mode_q, 1'b0, cmd_i, valid_i}; // rebuild cmd
+			output_mode_q <= output_mode_i;
 
-	assign ready_v_o = ready_v_i & ~data_v_o;
-	assign hash_v_o = hash_v_i;
-	assign hash_o = (loopback_mode_q == LOOPBACK_NONE) ? hash_i
-				  : (loopback_mode_q == LOOPBACK_DATA) ? data_i : cmd;
+	assign slow_output_o <= output_mode_q == OUTPUT_SLOW;
+	
+	assign cmd = {2'b0, output_mode_q, 1'b0, cmd_i, valid_i}; // rebuild cmd
+
+	// flop data just before output as there is a weak driver from this 
+	// hardware tile to the GPIO output buffer and the path has a slow skew 
+	// maximize available propagation time per cycle
+	always @(posedge clk) begin
+		ready_v_q <= ready_v_i & ~data_v_o;
+		hash_v_q  <= hash_v_i;
+		case(output_mode_q) begin
+			OUTPUT_DEFAULT, OUTPUT_SLOW: hash_q <= hash_i;
+			OUTPUT_LOOPBACK_DATA: hash_q <= data_i;
+			OUTPUT_LOOPBACK_CTRL: hash_q <= cmd;
+		
+		endcase
+	end
+	// to output pins
+	assign ready_v_o = ready_v_q;
+	assign hash_v_o = hash_v_q;
+	assign hash_o = hash_q; 
 endmodule

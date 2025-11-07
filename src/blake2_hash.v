@@ -28,7 +28,8 @@ module blake2s_hash256(
 	input wire [63:0]  ll_i,
 
 	input wire         block_first_i,               
-	input wire         block_last_i,               
+	input wire         block_last_i,  
+	input wire         slow_output_i,             
 	
 	input wire         data_v_i,
 	input wire [5:0]   data_idx_i,	
@@ -55,6 +56,7 @@ module blake2s_hash256(
 		
 		.block_first_i(block_first_i),
 		.block_last_i(block_last_i),
+		.slow_output_i(slow_output_i),
 		
 		.data_v_i(data_v_i),
 		.data_idx_i(data_idx_i),

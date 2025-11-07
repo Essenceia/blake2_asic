@@ -21,6 +21,7 @@ module tt_um_essen(
 	wire [7:0] data; 
 	wire [5:0] data_idx; 
 	wire block_first, block_last;
+	wire slow_output;
 	wire [2:0] unused_io; 
 
 	assign uio_oe = 8'b1000_1000;
@@ -37,7 +38,7 @@ module tt_um_essen(
 		.cmd_i(uio_in[2:1]),
 		.data_i(ui_in),
 
-		.loopback_mode_i(uio_in[5:4]),
+		.output_mode_i(uio_in[5:4]),
 
 		.ready_v_o(uio_out[3]),
 		.hash_v_o(uio_out[7]),
@@ -55,7 +56,9 @@ module tt_um_essen(
 		.data_o(data),
 		.data_idx_o(data_idx),
 		.block_first_o(block_first),
-		.block_last_o(block_last)
+		.block_last_o(block_last),
+
+		.slow_output_o(slow_output)
 	);
 	
 	blake2s_hash256 m_blake2(
@@ -68,6 +71,7 @@ module tt_um_essen(
 
 		.block_first_i(block_first),
 		.block_last_i(block_last),
+		.slow_output_i(slow_output),
 
 		.data_v_i(data_v),
 		.data_i(data),
