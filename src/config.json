@@ -29,9 +29,27 @@
 
   "//": "If you need a custom clock configuration, read the following documentation first:",
   "//": "https://tinytapeout.com/faq/#how-can-i-map-an-additional-external-clock-to-one-of-the-gpios",
+
   "CLOCK_PORT": "clk",
 
   "//": "Configuration docs: https://librelane.readthedocs.io/en/latest/reference/configuration.html",
+
+  "//": "------ Custom configs ---------", 
+
+  "SYNTH_STRATEGY": "AREA 0", 
+ 
+  "MAX_FANOUT_CONSTRAINT" : 10,
+
+  "//": "slew rate and cap rate violations fix: cells where actually caracerized up to a 1.5 slew rate", 
+  "//": "incresase fix effort", 
+  "MAX_TRANSITION_CONSTRAINT": 1.5,
+ "DESIGN_REPAIR_MAX_SLEW_PCT": 30,
+  "DESIGN_REPAIR_MAX_CAP_PCT": 30, 
+
+   "//" : "Antenna fixing, increase fix effort, break wires with diodes",
+   "GRT_ANTENNA_ITERS": 10,
+   "RUN_HEURISTIC_DIODE_INSERTION": true,
+
 
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
   "//": "!!! DO NOT CHANGE ANYTHING BELOW THIS POINT !!!",
