@@ -141,23 +141,28 @@ module blake2 #(
 
 	always @(posedge clk) begin
 		case (fsm_q)
+			S_IDLE: slow_output_q <= 1'b0;
+			default: slow_output_q <= slow_output_q | slow_output_i;
+		endcase
+	end
+
+	always @(posedge clk) begin
+		case (fsm_q)
 			S_WAIT_DATA: begin
 				first_block_q <= data_v_i ? block_first_i : first_block_q;
 				last_block_q <= data_v_i ? block_last_i : last_block_q;
-				slow_output_q <= slow_output_i;
 			end
 			S_F, S_F_END, S_F_END_2: begin
 				first_block_q <= first_block_q;
 				last_block_q <= last_block_q;
-				slow_output_q <= slow_output_q;
 			end
 			default: begin
 				first_block_q <= 1'b0;
 				last_block_q <= 1'b0;
-				slow_output_q <= 1'b0;
 			end
 		endcase
 	end
+
 
 /* `inc_g_idx` is to hold g sub cycle 4 and 7 an extra cycle to leave v[15]/v[4] time to propegate as
  * it is used in both g sub step 3->4/7->0. Just in case we needed another
@@ -215,8 +220,6 @@ module blake2 #(
 	// Parameter block p[0]
 	// h[0] := h[0] ^ 0x01010000 ^ (kk << 8) ^ nn
 	assign h_init[0] = IV[0] ^ {{W-32{1'b0}},32'h01010000} ^ {{W-W_CLOG2_P1-8{1'b0}},  kk_i ,{8{1'b0}}} ^ {{W-W_CLOG2_P1{1'b0}} , nn_i};
-	wire [W-1:0] debug_h_init0; 
-	assign debug_h_init0 = h_init[0];	
 
 	//----------
 	//
@@ -241,14 +244,6 @@ module blake2 #(
 	// IF f = TRUE THEN                // last block flag?
 	// |   v[14] := v[14] ^ 0xFF..FF   // Invert all bits.
 	// END IF.
-	wire [W-1:0] debug_v12, debug_v13, debug_v14, debug_v1, debug_v5, debug_v9;
-	assign debug_v1 = v_init_2[1];
-	assign debug_v5 = v_init_2[5];
-	assign debug_v9 = v_init_2[9];
-	assign debug_v12 = v_init_2[12];
-	assign debug_v13 = v_init_2[13];
-	assign debug_v14 = v_init_2[14];
-
 	assign v_init_2[12] = v_init[12] ^ t[W-1:0]; // Low word of the offset
 	assign v_init_2[13] = v_init[13] ^ t[2*W-1:W];// High word of the offset
 	assign v_init_2[14] = v_init[14] ^ {W{last_block_q}};
@@ -360,9 +355,6 @@ module blake2 #(
 			7: {g_x_idx, g_y_idx} = {sigma_row_elems[14], sigma_row_elems[15]};
 		endcase
 	end
-	wire [W-1:0] debug_m0, debug_m1;
-	assign debug_m0 = m_matrix[0];
-	assign debug_m1 = m_matrix[1];
 	assign g_x = m_matrix[g_x_idx];
 	assign g_y = m_matrix[g_y_idx];
 	
@@ -387,13 +379,10 @@ module blake2 #(
 		.d_o(d)
 	);
 
-	reg [W-1:0] debug_v_q0;
 	always @(posedge clk) begin
 		if (fsm_q == S_F) begin
 			if ((g_idx_next == 'd0) | (g_idx_next == 'd4))
 				v_q[0] <= a;
-			if ((g_idx_next == 'd0) | (g_idx_next == 'd4))
-				debug_v_q0 <= a;
 			if ((g_idx_next == 'd1) | (g_idx_next == 'd5))
 				v_q[1] <= a;	
 			if ((g_idx_next == 'd2) | (g_idx_next == 'd6))

@@ -190,7 +190,7 @@ async def test_random_hash(dut, slow=False):
     kk = random.randrange(1,33)
     key = random.randbytes(kk)
     data = random.randbytes(ll)
-    await test_hash(dut, kk, nn, ll, key, data, slow)
+    await test_hash(dut, kk, nn, ll, key, data, slow=slow)
 
 # Reset sequence
 async def rst(dut, ena=1):
