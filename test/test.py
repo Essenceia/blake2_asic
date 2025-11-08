@@ -244,7 +244,7 @@ async def hash_spec_test(dut):
 async def hash_test(dut):
     await rst(dut)
     await ClockCycles(dut.clk, 2)
-    for _ in range(0, 1):
+    for _ in range(0, 50):
         await test_random_hash(dut)
 
 @cocotb.test()

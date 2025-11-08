@@ -187,17 +187,17 @@ module blake2 #(
 	end
 
 	wire unused_res_cnt_add;
-	reg res_inc_q; 
+	reg shift_hash_q; 
 	/* increments by 1 if slow ioutput isn't enabled, else 
  	*  output each 8b hash output over 2 cycles */
 	always @(posedge clk) begin
 		case(fsm_q)
-			S_F_END : res_inc_q <= 1'b1;
-			default: res_inc_q <= res_inc_q ^ slow_output_q;
+			S_F_END : shift_hash_q <= 1'b1;
+			default: shift_hash_q <= shift_hash_q ^ slow_output_q;
 		endcase
 	end
 	
-	assign {unused_res_cnt_add, res_cnt_add} = res_cnt_q + {{W_CLOG2_P1-1{1'b0}}, res_inc_q};
+	assign {unused_res_cnt_add, res_cnt_add} = res_cnt_q + {{W_CLOG2_P1-1{1'b0}}, shift_hash_q};
 	always @(posedge clk) begin
 		case(fsm_q)
 			S_RES: res_cnt_q <= res_cnt_add;
@@ -443,7 +443,7 @@ module blake2 #(
 			always @(posedge clk) 
 				if (fsm_q == S_F_END) 
 					h_q[h_idx] <= h_last[h_idx];
-				else if (fsm_q == S_RES)
+				else if ((fsm_q == S_RES) & shift_hash_q) 
 					h_q[h_idx] <= h_shift_next_matrix[h_idx];
 		end
 	endgenerate
