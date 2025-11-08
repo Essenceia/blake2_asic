@@ -120,6 +120,7 @@ module blake2 #(
 	reg slow_output_q; 
 	(* MARK_DEBUG = "true" *) reg [2:0] fsm_q;
 	wire f_finished;
+	reg  f_finished_q;
 	reg [W_CLOG2_P1-1:0] res_cnt_q;
 	wire [W_CLOG2_P1-1:0] res_cnt_add;
 
@@ -152,13 +153,13 @@ module blake2 #(
 				first_block_q <= data_v_i ? block_first_i : first_block_q;
 				last_block_q <= data_v_i ? block_last_i : last_block_q;
 			end
-			S_F, S_F_END, S_F_END_2: begin
-				first_block_q <= first_block_q;
-				last_block_q <= last_block_q;
-			end
-			default: begin
+			S_RES, S_IDLE: begin
 				first_block_q <= 1'b0;
 				last_block_q <= 1'b0;
+			end
+			default: begin
+				first_block_q <= first_block_q;
+				last_block_q <= last_block_q;
 			end
 		endcase
 	end
@@ -177,6 +178,9 @@ module blake2 #(
 		endcase
 	end
 	assign f_finished = {round_q, g_idx_next} == { R_LAST, 3'd7};
+	always @(posedge clk) begin
+		f_finished_q <= f_finished;
+	end
 
 	reg unused_block_idx_plus_one_q;	
 	always @(posedge clk) begin
@@ -192,7 +196,7 @@ module blake2 #(
  	*  output each 8b hash output over 2 cycles */
 	always @(posedge clk) begin
 		case(fsm_q)
-			S_F_END : shift_hash_q <= 1'b1;
+			S_F_END: shift_hash_q <= 1'b1;
 			default: shift_hash_q <= shift_hash_q ^ slow_output_q;
 		endcase
 	end
@@ -441,7 +445,7 @@ module blake2 #(
 			assign h_shift_next_matrix[h_idx] = h_shift_next[(h_idx+1)*W-1:h_idx*W];
 
 			always @(posedge clk) 
-				if (fsm_q == S_F_END) 
+				if (f_finished_q) 
 					h_q[h_idx] <= h_last[h_idx];
 				else if ((fsm_q == S_RES) & shift_hash_q) 
 					h_q[h_idx] <= h_shift_next_matrix[h_idx];
