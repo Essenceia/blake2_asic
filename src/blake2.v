@@ -14,6 +14,7 @@ module blake2 #(
 	parameter R3     = 16,
 	parameter R4     = 63,
 	parameter R      = 12, // Number of rounds in v srambling
+	parameter [3:0] R_LAST = R,
 	parameter BB_CLOG2   = $clog2(BB),
 	parameter W_CLOG2_P1 = $clog2((W+1)) // double paranthesis needed: verilator parsing bug
 	)
@@ -38,12 +39,12 @@ module blake2 #(
 	output wire [7:0]           h_o
 	);
 	localparam IB_CNT_W = BB - $clog2(BB);
+	localparam RND_W    = $clog2(R);
 	localparam G_RND_W  = $clog2(8);
-	localparam [R-1:0] R_START = {{R-1{1'b0}}, 1'b1};
 
 	wire [G_RND_W-1:0] g_idx_next; // Finished sub round index
 	(* MARK_DEBUG = "true" *)reg  [G_RND_W-1:0] g_idx_q; // G function idx, sub-round
-	(* MARK_DEBUG = "true" *)reg  [R-1:0] round_q;
+	(* MARK_DEBUG = "true" *)reg  [RND_W-1:0] round_q;
 
 	wire [BB-1:0]  t;	
 	reg  [IB_CNT_W-1:0]  block_idx_plus_one_q;
@@ -107,19 +108,19 @@ module blake2 #(
 	endgenerate
 
 	// fsm
-	localparam [2:0] S_IDLE      = 3'd0;
+	localparam [2:0] S_IDLE = 3'd0;
 	localparam [2:0] S_WAIT_DATA = 3'd1;
-	localparam [2:0] S_F         = 3'd2;
-	localparam [2:0] S_F_END     = 3'd3; // write back h, save on mux on path to write back v to h
-	localparam [2:0] S_F_END_2   = 3'd4; // extra cycle on slow out
-	localparam [2:0] S_RES       = 3'd5;
+	localparam [2:0] S_F = 3'd2;
+	localparam [2:0] S_F_END = 3'd3; // write back h, save on mux on path to write back v to h
+	localparam [2:0] S_F_END_2 = 3'd4; // extra cycle on slow out
+	localparam [2:0] S_RES = 3'd5;
 
 	reg first_block_q; 
 	reg last_block_q; 
 	reg slow_output_q; 
 	(* MARK_DEBUG = "true" *) reg [2:0] fsm_q;
 	wire f_finished;
-	reg  f_finished_q; // pesimistic s_f_end alternative to reduce strain on fsm_q, help antenna violation
+	reg  f_finished_q;
 	reg [W_CLOG2_P1-1:0] res_cnt_q;
 	wire [W_CLOG2_P1-1:0] res_cnt_add;
 
@@ -172,16 +173,11 @@ module blake2 #(
 	assign inc_g_idx = ~((g_idx_next == 3'd3) | (g_idx_next == 3'd6)); 
 	always @(posedge clk) begin
 		case (fsm_q)
-			S_F: begin 
-				if (inc_g_idx) begin
-					{unused_f_cnt_q, g_idx_q} <= g_idx_q + {{G_RND_W-1{1'b0}}, 1'b1};
-					round_q <= &g_idx_q ? {round_q[R-2:0], 1'b0} : round_q;
-				end
-			end
-			default: {round_q, g_idx_q} <= {R_START, {G_RND_W{1'b0}}};
+			S_F: {unused_f_cnt_q, round_q, g_idx_q} <= {round_q, g_idx_q} + {{RND_W+G_RND_W-1{1'b0}}, inc_g_idx};
+			default: {round_q, g_idx_q} <= {RND_W+G_RND_W{1'b0}};
 		endcase
 	end
-	assign f_finished = round_q[R-1] & (g_idx_q == 3'd7) & (g_idx_next == 3'd7);
+	assign f_finished = {round_q, g_idx_next} == { R_LAST, 3'd7};
 	always @(posedge clk) begin
 		f_finished_q <= f_finished;
 	end
@@ -269,7 +265,7 @@ module blake2 #(
 	genvar v_idx;
 	generate
 		for(v_idx = 0; v_idx<16; v_idx=v_idx+1 ) begin : loop_v_idx
-			assign v_current[v_idx] = (round_q[0] & (g_idx_q < 3'd4))? v_init_2[v_idx] : v_q[v_idx];
+			assign v_current[v_idx] = ((round_q == {RND_W{1'b0}}) & (g_idx_q < 3'd4))? v_init_2[v_idx] : v_q[v_idx];
 		end
 	endgenerate
 
@@ -333,16 +329,16 @@ module blake2 #(
 		endcase
 	end
 
-	assign sigma_row  = {64{round_q[0]}} & SIGMA[0]
-			 		  | {64{round_q[1]}} & SIGMA[1]
-			 		  | {64{round_q[2]}} & SIGMA[2]
-			 		  | {64{round_q[3]}} & SIGMA[3]
-			 		  | {64{round_q[4]}} & SIGMA[4]
-			 		  | {64{round_q[5]}} & SIGMA[5]
-			 		  | {64{round_q[6]}} & SIGMA[6]
-			 		  | {64{round_q[7]}} & SIGMA[7]
-			 		  | {64{round_q[8]}} & SIGMA[8]
-			 		  | {64{round_q[9]}} & SIGMA[9];
+	assign sigma_row  = {64{ round_q == 4'd0 }} & SIGMA[0]
+			 		  | {64{ round_q == 4'd1 }} & SIGMA[1]
+			 		  | {64{ round_q == 4'd2 }} & SIGMA[2]
+			 		  | {64{ round_q == 4'd3 }} & SIGMA[3]
+			 		  | {64{ round_q == 4'd4 }} & SIGMA[4]
+			 		  | {64{ round_q == 4'd5 }} & SIGMA[5]
+			 		  | {64{ round_q == 4'd6 }} & SIGMA[6]
+			 		  | {64{ round_q == 4'd7 }} & SIGMA[7]
+			 		  | {64{ round_q == 4'd8 }} & SIGMA[8]
+			 		  | {64{ round_q == 4'd9 }} & SIGMA[9];
 	genvar j;
 	generate
 		for( j = 0; j < 16; j=j+1 ) begin : loop_sigma_elem
