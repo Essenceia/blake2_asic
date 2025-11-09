@@ -285,8 +285,9 @@ module blake2 #(
 	// v := G( v, 2, 7,  8, 13, m[s[12]], m[s[13]] ) 6
 	// v := G( v, 3, 4,  9, 14, m[s[14]], m[s[15]] ) 7
 
-	reg  [W-1:0] g_a, g_b, g_c, g_d;
+	reg  [W-1:0] g_a, g_b, g_d;
 	wire [W-1:0] g_x, g_y;
+	wire [W-1:0] g_c;
 	reg  [W-1:0] g_c_buf;
 	wire [W-1:0] g_y_buf;
 	/* not using @(*) to work around xst limitation */
