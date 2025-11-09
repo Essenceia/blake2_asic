@@ -286,8 +286,9 @@ module blake2 #(
 	// v := G( v, 3, 4,  9, 14, m[s[14]], m[s[15]] ) 7
 
 	reg  [W-1:0] g_a, g_b, g_c, g_d;
-	reg  [W-1:0] g_c_buf;
 	wire [W-1:0] g_x, g_y;
+	reg  [W-1:0] g_c_buf;
+	wire [W-1:0] g_y_buf;
 	/* not using @(*) to work around xst limitation */
 	always @(*) begin 
 		case(g_idx_q[1:0])
@@ -321,19 +322,6 @@ module blake2 #(
 			3: g_c_buf = v_current[11]; 
  		endcase
 	end
-
-	genvar c_idx;
-	generate
-		for(c_idx = 0; c_idx < W; c_idx=c_idx+1) begin: g_c_buffer
-        	`ifdef SCL_sky130_fd_sc_hd
-        	/* verilator lint_off PINMISSING */
-        	sky130_fd_sc_hd__buf_2 m_buf( .A(g_c_buf[c_idx]), .X(g_c[c_idx]));
-        	/* verilator lint_on PINMISSING */
-        	`else
-        	assign g_c[c_idx] = g_c_buf[c_idx];
-        	`endif
-		end
-	endgenerate
 
 	wire [1:0] g_d_idx; 
 	wire unused_g_d_idx; 
@@ -377,8 +365,24 @@ module blake2 #(
 			7: {g_x_idx, g_y_idx} = {sigma_row_elems[14], sigma_row_elems[15]};
 		endcase
 	end
-	assign g_x = m_matrix[g_x_idx];
-	assign g_y = m_matrix[g_y_idx];
+	assign g_x     = m_matrix[g_x_idx];
+	assign g_y_buf = m_matrix[g_y_idx];
+
+	// manually inserting buffers for fixing implementation 
+	genvar buf_idx;
+	generate
+		for(buf_idx = 0; buf_idx < W; buf_idx=buf_idx+1) begin: g_buffer
+        	`ifdef SCL_sky130_fd_sc_hd
+        	/* verilator lint_off PINMISSING */
+        	sky130_fd_sc_hd__buf_2 m_c_buf( .A(g_c_buf[buf_idx]), .X(g_c[buf_idx]));
+        	sky130_fd_sc_hd__buf_2 m_y_buf( .A(g_y_buf[buf_idx]), .X(g_y[buf_idx]));
+        	/* verilator lint_on PINMISSING */
+        	`else
+        	assign g_c[buf_idx] = g_c_buf[buf_idx];
+        	assign g_y[buf_idx] = g_y_buf[buf_idx];
+        	`endif
+		end
+	endgenerate
 	
 	wire [W-1:0] a,b,c,d; 
 	
