@@ -286,6 +286,7 @@ module blake2 #(
 	// v := G( v, 3, 4,  9, 14, m[s[14]], m[s[15]] ) 7
 
 	reg  [W-1:0] g_a, g_b, g_c, g_d;
+	reg  [W-1:0] g_c_buf;
 	wire [W-1:0] g_x, g_y;
 	/* not using @(*) to work around xst limitation */
 	always @(*) begin 
@@ -314,12 +315,25 @@ module blake2 #(
 	assign {unused_g_c_idx,g_c_idx} = g_idx_q + {g_idx_q[2], 1'b0};
 	always @(*) begin
 		case(g_c_idx)
-			0: g_c = v_current[8]; 
-			1: g_c = v_current[9]; 
-			2: g_c = v_current[10]; 
-			3: g_c = v_current[11]; 
+			0: g_c_buf = v_current[8]; 
+			1: g_c_buf = v_current[9]; 
+			2: g_c_buf = v_current[10]; 
+			3: g_c_buf = v_current[11]; 
  		endcase
 	end
+
+	genvar c_idx;
+	generate
+		for(c_idx = 0; c_idx < W; c_idx=c_idx+1) begin: g_c_buffer
+                `ifdef SCL_sky130_fd_sc_hd
+                /* verilator lint_off PINMISSING */
+                sky130_fd_sc_hd__buf_2 m_buf( .A(g_c_buf[c_idx]), .X(g_c[c_idx]));
+                /* verilator lint_on PINMISSING */
+                `else
+                assign g_c[c_idx] = g_c_buf[c_idx];
+                `endif
+		end
+	endgenerate
 
 	wire [1:0] g_d_idx; 
 	wire unused_g_d_idx; 
