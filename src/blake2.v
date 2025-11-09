@@ -325,13 +325,13 @@ module blake2 #(
 	genvar c_idx;
 	generate
 		for(c_idx = 0; c_idx < W; c_idx=c_idx+1) begin: g_c_buffer
-                `ifdef SCL_sky130_fd_sc_hd
-                /* verilator lint_off PINMISSING */
-                sky130_fd_sc_hd__buf_2 m_buf( .A(g_c_buf[c_idx]), .X(g_c[c_idx]));
-                /* verilator lint_on PINMISSING */
-                `else
-                assign g_c[c_idx] = g_c_buf[c_idx];
-                `endif
+        	`ifdef SCL_sky130_fd_sc_hd
+        	/* verilator lint_off PINMISSING */
+        	sky130_fd_sc_hd__buf_2 m_buf( .A(g_c_buf[c_idx]), .X(g_c[c_idx]));
+        	/* verilator lint_on PINMISSING */
+        	`else
+        	assign g_c[c_idx] = g_c_buf[c_idx];
+        	`endif
 		end
 	endgenerate
 
