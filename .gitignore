@@ -14,4 +14,4 @@ ttsetup
 update.sh
 build
 *.swp
-*.log
+
