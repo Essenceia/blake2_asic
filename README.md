@@ -212,6 +212,16 @@ make gdb GDB_SERVER_ADDR=192.168.0.145
 
 ## Physical implementation 
 
+This next section goes over the characterisitcs of the implemented design as made available 
+in the [hardened_design/(/hardened_design) folder.
+This folder contains all the necessary files to include this accelerator as is as a macro including, but
+not limited to the: 
+- gds 
+- lef
+- lib
+- spice models
+- netlist simulation models 
+
 ### Area 
 
 This ASIC was implemented on the SkyWater 130nm A node and was allocated an
@@ -235,6 +245,7 @@ clock buffers, inverters, sequential cells, combinational cells) utilising 65.55
 | Multi-Input combinational cell    | 5638  | 53603.91   |
 | **Total**                         | 21723 | 149183.08  |
 
+A more detailed breakdown per cell is available in: [/doc/odb-frequencytables.log](/doc/odb-cellfrequencytables.log)
 
 ### Timing 
 
@@ -298,10 +309,6 @@ Due to the size of this design and some of it's longer paths, this design has is
 I believe these are minor enoght issues that these are acceptable, should not significantly impact defect rates or 
 functionality.
 
-This design has no : 
-- DRC violations
-  
-
 #### Antenna violations 
 
 Although I belive these to be minor enoght to not cause any concern, due to the size of the desing's occupied area and the length of specific paths 
@@ -350,7 +357,6 @@ There are no slew rate violations.
 
 This design has no DRC violations as reported by magic. 
 
-#### 
 ## Documentation 
 
 - Tiny Tapeout Official site : [https://www.tinytapeout.com/](https://www.tinytapeout.com/)
