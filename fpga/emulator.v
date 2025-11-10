@@ -44,7 +44,7 @@ reg [PMOD_W-1:0] data_bus_q, data_q;
 reg [2:0] data_ctrl_bus_q, data_ctrl_q;
 reg [1:0] loopback_ctrl_bus_q, loopback_ctrl_q;
 
-wire [PMOD_W-1:0] hash;
+(* MARK_DEBUG = "true" *) wire [PMOD_W-1:0] hash;
 reg  [PMOD_W-1:0] hash_bus_q;
 (* MARK_DEBUG = "true" *) wire [1:0] hash_ctrl;
 reg  [1:0] hash_ctrl_bus_q;
