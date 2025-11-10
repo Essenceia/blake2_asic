@@ -1,8 +1,8 @@
 # Blake2s RTL implementation
 
 Implementation of the Blake2s cryptographic hash function (RFC7693) targetting
-tapout on the SKY130A node within a 682 x 225 um area envelop.
-This designed was tapeout out in 2025 as part of the TinyTapout multi wafer program shuttle skt25b.
+tapout on the SKY130A node within a 682 x 225 µm area envelop.
+This designed was tapeout out in 2025 as part of the TinyTapout multi wafer program shuttle sky25b.
 
 This is a fully featured Blake2s implementation supporting both block streaming and 
 proving the secret key. 
@@ -209,6 +209,30 @@ starting gdb.
 ```
 make gdb GDB_SERVER_ADDR=192.168.0.145
 ```
+
+## Physical implementation 
+
+This ASIC was implemented on the SkyWater 130nm A node and was allocated an
+area budget with 682.64 x 225.76 µm of die area and a  2.7 x 2.72 679.88 x 223.04 µm core box. 
+
+The final implementation results in the following area allocation with the design elements (buffers, 
+clock buffers, inverters, sequential cells, combinational cells) utilising 65.556% of the available area: 
+
+
+| Cell type                         | Count | Area       |
+|-----------------------------------|-------|------------|
+| Fill cell                         | 6073  | 30445.45   |
+| Tap cell                          | 2158  | 2700.09    |
+| Antenna cell                      | 4031  | 10087.17   |
+| Buffer                            | 66    | 251.49     |
+| Clock buffer                      | 91    | 1238.69    |
+| Timing Repair Buffer              | 1892  | 16809.87   |
+| Inverter                          | 89    | 380.36     |
+| Clock inverter                    | 28    | 341.58     |
+| Sequential cell                   | 1657  | 33324.46   |
+| Multi-Input combinational cell    | 5638  | 53603.91   |
+| **Total**                         | 21723 | 149183.08  |
+
 
 ## Documentation 
 
