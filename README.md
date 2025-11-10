@@ -212,6 +212,8 @@ make gdb GDB_SERVER_ADDR=192.168.0.145
 
 ## Physical implementation 
 
+### Area 
+
 This ASIC was implemented on the SkyWater 130nm A node and was allocated an
 area budget with 682.64 x 225.76 µm of die area and a  2.7 x 2.72 679.88 x 223.04 µm core box. 
 
@@ -232,6 +234,57 @@ clock buffers, inverters, sequential cells, combinational cells) utilising 65.55
 | Sequential cell                   | 1657  | 33324.46   |
 | Multi-Input combinational cell    | 5638  | 53603.91   |
 | **Total**                         | 21723 | 149183.08  |
+
+
+### Timing 
+
+This design targets a 66MHz ( 15ns per cycle ) internal clock speed with a target operating corner of `nom_tt_025C_1v80`, as you 
+can see this gives us a very comfortable `+2.0560 ns` setup slack an `+0.2441 ns` hold slack on our worst corner `max_tt_025C_1v80`.
+
+As initially mentioned, this design is I/O bottlnecked, in parctice this 66MHz target frequency was chosen in accordance with
+the maximum supported GPIO input path operating frequency set at 66Mz.  
+The bottneck also exists on the output GPIO path, when the output buffer slew rate requires an output target frequency of 33MHz, the 
+`slow_output_mode` was added to comphensate for the output paths slower slew rate. 
+
+```
+┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┓
+┃                      ┃ Hold     ┃ Reg to   ┃          ┃          ┃ of which  ┃ Setup    ┃           ┃          ┃           ┃ of which ┃
+┃                      ┃ Worst    ┃ Reg      ┃          ┃ Hold Vio ┃ reg to    ┃ Worst    ┃ Reg to    ┃ Setup    ┃ Setup Vio ┃ reg      ┃
+┃ Corner/Group         ┃ Slack    ┃ Paths    ┃ Hold TNS ┃ Count    ┃ reg       ┃ Slack    ┃ Reg Paths ┃ TNS      ┃ Count     ┃ reg      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━┩
+│ Overall              │ 0.0775   │ 0.0775   │ 0.0000   │ 0        │ 0         │ 2.0560   │ 2.0560    │ 0.0000   │ 0         │ 0        │
+│ nom_tt_025C_1v80     │ 0.2463   │ 0.2463   │ 0.0000   │ 0        │ 0         │ 2.3932   │ 2.3932    │ 0.0000   │ 0         │ 0        │
+│ nom_ff_n40C_1v95     │ 0.0785   │ 0.0785   │ 0.0000   │ 0        │ 0         │ 6.8378   │ 6.8378    │ 0.0000   │ 0         │ 0        │
+│ min_tt_025C_1v80     │ 0.2483   │ 0.2483   │ 0.0000   │ 0        │ 0         │ 2.8219   │ 2.8219    │ 0.0000   │ 0         │ 0        │
+│ min_ff_n40C_1v95     │ 0.0796   │ 0.0796   │ 0.0000   │ 0        │ 0         │ 7.1220   │ 7.1220    │ 0.0000   │ 0         │ 0        │
+│ max_tt_025C_1v80     │ 0.2441   │ 0.2441   │ 0.0000   │ 0        │ 0         │ 2.0560   │ 2.0560    │ 0.0000   │ 0         │ 0        │
+│ max_ff_n40C_1v95     │ 0.0775   │ 0.0775   │ 0.0000   │ 0        │ 0         │ 6.6094   │ 6.6094    │ 0.0000   │ 0         │ 0        │
+└──────────────────────┴──────────┴──────────┴──────────┴──────────┴───────────┴──────────┴───────────┴──────────┴───────────┴──────────┘
+```
+
+### Power 
+
+Power was no a concern in this design. 
+
+### Manifacturability 
+
+Due to the size of this design and some of it's longer paths, this design has is know to have the following issues, 
+I believe these are minor enoght issues that these are acceptable, should not significantly impact defect rates or 
+functionality. 
+
+#### Antenna violations 
+
+Although I belive these to be minor enoght to not cause any concern, due to the size of the desing's occupied area and the length of specific paths this design exibits
+ the following very antenna violations :
+
+```
+┏━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ P / R ┃ Partial ┃ Required ┃ Net                                          ┃ Pin                                                                      ┃ Layer ┃
+┡━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ 1.30  │ 519.81  │ 400.00   │ m_blake2.m_hash256.m_matrix[6\][7\]          │ m_blake2.m_hash256.m_matrix[5\][31\]_sky130_fd_sc_hd__dfxtp_2_Q_D_sky13… │ met3  │
+│ 1.27  │ 506.31  │ 400.00   │ m_blake2.m_hash256.block_idx_plus_one_q[51\] │ m_blake2.m_hash256.block_idx_plus_one_q[51\]_sky130_fd_sc_hd__and3_2_B/B │ met1  │
+└───────┴─────────┴──────────┴──────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────┴───────┘
+```
 
 
 ## Documentation 
