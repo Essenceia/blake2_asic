@@ -43,10 +43,12 @@ _Static_assert(sizeof(pinout_t) == (32/8));
 #define CTRL_DATA_CMD_DATA  0x2
 #define CTRL_DATA_CMD_LAST  0x3
 
-/* loopback mode ctrl */ 
+/* output mode ctrl */ 
+#define OUTPUT_CTRL_BASE_PIN CTRL_BASE_PIN+4
 #define CTRL_LOOPBACK_DATA (uint32_t) 0x10 
 #define CTRL_LOOPBACK_CTRL (uint32_t) 0x20 
 #define CTRL_LOOPBACK_MASK (uint32_t) 0x30 // bits [5:4] 8'b0011_0000
+#define OUTPUT_SLOW_CTRL   (uint32_t) 0x30
 
 /* PIO defines */ 
 // side of data to write OUT, also used as autopull threshold

@@ -5,7 +5,9 @@ init:
 init_data_rd:
 	set x, 0; dumy cycle
 data_rd:
+	set x, 0; slow output dumy cycle
 	in pins, 8
+	set x, 0;
 	jmp pin data_rd
 	push block
 .wrap_target

@@ -125,6 +125,14 @@ int main() {
 	/* data rd */
 	uint rd_dma_chan = init_rd_dma_channel(pio[PIO_RD], sm[PIO_RD]);
 
+	/* set slow output, currently seing interferance between coper cables leading to high slew rate on hash results*/ 
+	for (int i=0; i < 2; i++){
+		gpio_init(OUTPUT_CTRL_BASE_PIN+i);
+		gpio_set_dir(OUTPUT_CTRL_BASE_PIN+i, GPIO_OUT);
+		gpio_pull_down(OUTPUT_CTRL_BASE_PIN+i);
+		gpio_put(OUTPUT_CTRL_BASE_PIN+i, 1);
+	}
+		
 	uint32_t tc; 
 	uint tx_fifo_lvl, rx_fifo_lvl;
 	bool stalled;
