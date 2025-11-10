@@ -264,18 +264,48 @@ The bottneck also exists on the output GPIO path, when the output buffer slew ra
 
 ### Power 
 
-Power was no a concern in this design. 
+Power was no a concern in this design, as such, no dynamic power usage analysis where performed. 
+
+#### IR drop
+
+Here is a short summary of the IR drops estimate by openROAD psm's tool, 
+reporting only a very minor drop on the `nom_tt_025C_1v80` corner. 
+
+`VPWR`: 
+
+```
+Supply voltage   : 1.80e+00 V
+Worstcase voltage: 1.80e+00 V
+Average voltage  : 1.80e+00 V
+Average IR drop  : 1.52e-05 V
+Worstcase IR drop: 9.50e-05 V
+Percentage drop  : 0.01 %
+```
+
+`VGND`:
+```
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 9.32e-05 V
+Average voltage  : 1.63e-05 V
+Average IR drop  : 1.63e-05 V
+Worstcase IR drop: 9.32e-05 V
+Percentage drop  : 0.01 %
+```
 
 ### Manifacturability 
 
 Due to the size of this design and some of it's longer paths, this design has is know to have the following issues, 
 I believe these are minor enoght issues that these are acceptable, should not significantly impact defect rates or 
-functionality. 
+functionality.
+
+This design has no : 
+- DRC violations
+  
 
 #### Antenna violations 
 
-Although I belive these to be minor enoght to not cause any concern, due to the size of the desing's occupied area and the length of specific paths this design exibits
- the following very antenna violations :
+Although I belive these to be minor enoght to not cause any concern, due to the size of the desing's occupied area and the length of specific paths 
+this hardneing exibits the following minor antenna violations :
 
 ```
 ┏━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
@@ -285,8 +315,42 @@ Although I belive these to be minor enoght to not cause any concern, due to the 
 │ 1.27  │ 506.31  │ 400.00   │ m_blake2.m_hash256.block_idx_plus_one_q[51\] │ m_blake2.m_hash256.block_idx_plus_one_q[51\]_sky130_fd_sc_hd__and3_2_B/B │ met1  │
 └───────┴─────────┴──────────┴──────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────┴───────┘
 ```
+These paths are quite far from the edge of the block, so if a punch though of the gate oxide does occure, no damage should be done to the neihbouring designs. 
 
+#### Max capactiance violations
 
+This design has two minor max cap violations, neither are on the target corners, are not accompanied with any slew violations are
+are small enogth that even though they are on the clk tree I deem them acceptable :  
+
+`max_tt_025C_1v80`: 
+```
+Pin                                        Limit         Cap       Slack
+------------------------------------------------------------------------
+clkbuf_0_clk/X                          0.200000    0.203128   -0.003128 (VIOLATED)
+```
+
+`max_ff_025C_1v95`:
+```
+Pin                                        Limit         Cap       Slack
+------------------------------------------------------------------------
+clkbuf_0_clk/X                          0.200000    0.202537   -0.002537 (VIOLATED)
+```
+
+In an ideal world. I would have put a stronger driver, but `clkbuf_0_clk/X` is already the output of a the maxiumum strength clock buffer availble in the PDK, namely 
+a `sky130_fd_sc_hd__clkbuf_16`. 
+
+That said, unlike antenna violatoins where most implementation runs will result in a 2 or 3 violations in a ranges of [1:2.7] P/R, these max capactiance violations 
+occure only with a subset of implementations, as such, it is quite possible that alternate hardenings might not even encounter any. 
+
+#### Slew rate violations
+
+There are no slew rate violations. 
+
+#### DRC violations
+
+This design has no DRC violations as reported by magic. 
+
+#### 
 ## Documentation 
 
 - Tiny Tapeout Official site : [https://www.tinytapeout.com/](https://www.tinytapeout.com/)
