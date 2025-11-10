@@ -1,7 +1,8 @@
 # Blake2s RTL implementation
 
-Implementation of the Blake2s cryptographic hash function (RFC7693) in 
-synthesizable RTL.
+Implementation of the Blake2s cryptographic hash function (RFC7693) targetting
+tapout on the SKY130A node within a 682 x 225 um area envelop.
+This designed was tapeout out in 2025 as part of the TinyTapout multi wafer program shuttle skt25b.
 
 This is a fully featured Blake2s implementation supporting both block streaming and 
 proving the secret key. 
