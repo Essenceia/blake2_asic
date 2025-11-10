@@ -12,6 +12,35 @@ expense of some performance.
 
 ![asic floorplan](/docs/layout.png)
 
+## Table of content 
+
+- [Physical implementation ](#physical-implementation)
+   * [Area ](#area)
+   * [Timing ](#timing)
+   * [Power ](#power)
+      + [IR drop](#ir-drop)
+   * [Manifacturability ](#manifacturability)
+      + [Antenna violations ](#antenna-violations)
+      + [Max capactiance violations](#max-capactiance-violations)
+      + [Slew rate violations](#slew-rate-violations)
+      + [DRC violations](#drc-violations)
+- [Lint](#lint)
+         - [Waiver](#waiver)
+         - [Switch simulator ](#switch-simulator)
+- [Testing ](#testing)
+   * [Simulation ](#simulation)
+      + [Cocotb ](#cocotb)
+      + [Test vectors ](#test-vectors)
+   * [Emulation ](#emulation)
+      + [FPGA ](#fpga)
+         - [Debugging ](#debugging)
+      + [Firmware](#firmware)
+         - [Debugging](#debugging-1)
+            * [Flash new firmware over gdb](#flash-new-firmware-over-gdb)
+            * [Remote GDB server ](#remote-gdb-server)
+- [Documentation ](#documentation)
+- [Credits](#credits)
+   
 ## Physical implementation 
 
 This next section goes over the characterisitcs of the implemented design as made available 
@@ -77,7 +106,7 @@ The bottneck also exists on the output GPIO path, when the output buffer slew ra
 
 ### Power 
 
-Power was no a concern in this design, as such, no dynamic power usage analysis where performed. 
+Power was no a concern in this design, as such, no dynamic power analysis where performed. 
 
 #### IR drop
 
