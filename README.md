@@ -206,7 +206,7 @@ and uses the content of the `lib` as models for the FPGA specific macros such as
 make lint_fpga
 ```
 
-##### Waiver
+### Waiver
 
 By default `verilator` will be using the following waivers for linting, these are provided in `conf/waiver.vlt`. 
 
@@ -215,7 +215,7 @@ lint_off -rule UNUSEDSIGNAL -file "*" -match "Signal is not used: 'debug_*"
 lint_off -file "lib/*" -match "*
 ```
 
-##### Switch simulator 
+### Switch simulator 
 
 Given it's higher strictness `verilator` is used as the default linter. If you wish to switch you can select `iverilog` using the `SIM` argument : 
 ```
