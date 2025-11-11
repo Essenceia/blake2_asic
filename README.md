@@ -12,6 +12,8 @@ expense of some performance.
 
 ![asic floorplan](/docs/layout.png)
 
+This design was designed around an I/O bottneck on both the input and output direction. 
+
 ## Physical implementation 
 
 This next section goes over the characterisitcs of the implemented design as made available 
@@ -47,7 +49,7 @@ clock buffers, inverters, sequential cells, combinational cells) utilising 65.55
 | Multi-Input combinational cell    | 5638  | 53603.91   |
 | **Total**                         | 21723 | 149183.08  |
 
-A more detailed breakdown per cell is available in: [/doc/odb-frequencytables.log](/doc/odb-cellfrequencytables.log)
+A more detailed breakdown per cell type is available in: [/doc/odb-frequencytables.log](/doc/odb-cellfrequencytables.log)
 
 ### Timing 
 
