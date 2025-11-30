@@ -10,8 +10,6 @@ proving the secret key.
 
 Documentation on using this accelerator can be found: [here](docs/index.md)
 
-Documentation for getting started with this codebase can be found: [here](usage.md)
-
 ## ASIC 
 
 This accelerator was designed for the SKY130A node, for a target operating frequency of 66.66 MHz 
@@ -31,9 +29,13 @@ Current status: **Taped-in**, in fabrication, part of the tiny-tapeout `sky25b` 
 
 For this implementation, I have chosen to optimize for area usage, at the expense of some performance.
 
-## IO bottleneck
+### IO bottleneck
 
 This design was designed around an I/O bottneck on both the input and output direction. 
+
+## Using this codebase 
+
+For getting started with using this codebase, documentation on the build flows can found: [here](usage.md)
 
 ## License 
 
