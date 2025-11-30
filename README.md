@@ -1,20 +1,16 @@
 # Blake2s RTL implementation
 
 Implementation of the Blake2s cryptographic hash function [(RFC7693)](docs/rfc7693.md) targetting
-tapout on the SKY130A node within a 682 x 225 µm area envelop.
-This designed was tapeout out in 2025 as part of the TinyTapout multi wafer program shuttle sky25b.
+tapout on the SKY130A node.
 
 This is a fully featured Blake2s implementation supporting both block streaming and 
 proving the secret key. 
-
-It has been optimized for area usage ahead of an ASIC tapeout, at the 
-expense of some performance.  
 
 ![asic floorplan](/docs/layout.png)
 
 Documentation on using this accelerator can be found: [here](docs/index.md)
 
-Documentation on using this codebase can be found: [here](usage.md)
+Documentation for getting started with this codebase can be found: [here](usage.md)
 
 ## ASIC 
 
@@ -30,6 +26,12 @@ There are currently no major manifacturing issues, with only 3 minir antenna vio
 Current status: **Taped-in**, in fabrication, part of the tiny-tapeout `sky25b` shuttle. 
 
 ## Blake2s 
+
+### PPA 
+
+For this implementation, I have chosen to optimize for area usage, at the expense of some performance.
+
+## IO bottleneck
 
 This design was designed around an I/O bottneck on both the input and output direction. 
 
