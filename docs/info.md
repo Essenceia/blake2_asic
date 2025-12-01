@@ -89,7 +89,7 @@ The sequence to send a block is as follows:
 
 Then, start the 64 data transfer cycles during which:
 - `valid_i` is set to `1`
-- `mode_i[1:0]` is set to `1` if this is the first data transfer cycle of the first block, `3` if this is the last data transfer cycle of the last block, else it is set to `2`
+- `ctrl_i[1:0]` is set to `1` if this is the first data transfer cycle of the first block, `3` if this is the last data transfer cycle of the last block, else it is set to `2`
 - `data_i[7:0]` contains the current data byte
 
 The `ready_v_o` signal indicates the accelerator is ready to receive data. In order to improve performance, users can skip waiting for this signal to be re-asserted between each byte transfer and can safely proceed with sending the entire block as soon as the `ready_v_o` signal is observed at `1`.
@@ -134,16 +134,19 @@ Parameters :
 
 ### Slow Output Mode
 
-For the `sky130b` shuttle, although the maximum stable GPIO input switching frequency is 66 MHz, due to a weak driver on the output buffer path resulting in much higher slew rate, the current maximum stable supported transitioning frequency is believed to be 33 MHz.
+For the `sky130b` shuttle, although the maximum stable GPIO input switching frequency is 66 MHz, due to a weak driver on the output buffer path resulting in much higher slew rate, the current maximum output stable supported transitioning frequency is 33 MHz.
 
 In order to allow more room for experimenting with the limits of the maximum stable output switching rate while supporting a more stable operating mode, the "slow output" mode was added to this design.
 
-Users simply looking to reliably use the accelerator should always have the slow output mode set.
+⚠️ Users simply looking to reliably use the accelerator should always have the slow output mode set.
 
 This mode can be enabled by setting `output_mode_i[1:0]` at any time while the accelerator is hashing or receiving data, but for more reliability, we recommend the user simply clamp these pins using the GPIO.
 
 Setting the slow output mode:
 - `output_mode_i[1:0]` is set to `3`
+
+Setting the default fast output mode:
+- `output_mode_i[1:0]` is set to `0`
 
 ### Reading the Hash
 
