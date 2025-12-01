@@ -12,11 +12,7 @@ This is a hashing accelerator for the Blake2 cryptographic hash function (RFC 76
 
 This is a fully featured Blake2s implementation supporting both block streaming and using a secret key.
 
-## Background 
-
-blake2s short presentation 
-
-what is the configuration 
+## Blake2s Algorythm 
 
 ## Usage
 
@@ -149,31 +145,65 @@ This mode can be enabled by setting `output_mode_i[1:0]` at any time while the a
 Setting the slow output mode:
 - `output_mode_i[1:0]` is set to `3`
 
-### Reading Hash 
+### Reading the Hash
 
-After the accelerator finishes hashing the last block if will begin streaming out the final hash result. 
-In blake2 the $nn$ configuration parameter specifies how many bytes long the resulting hash should be, this
-accelerator follows this convention and will only return $nn$ bytes as a result. 
+After the accelerator finishes hashing the last block, it will begin streaming out the final hash result.
 
-Since this accelerator was designed to interface with an embedded MCU and not another accelerator or an FPGA, the
-accelerator asserts the `hash_v_o` signal ahead of starting to steam out the result. This is done so that we can 
-allow the RP2040 PIO to detect the start of the result sequence and initate capturing the data. Because of this, 
-this accelerator is tightly co-designed with the PR2040 in mind and cannot be ported to other MCU families, as it is reliant 
-on a 15/30ns(if slow mode is set) reaction time, followed by a very timing accurate capture of the GPIO values.
-See `firmware/data_rd.pio` for this PIO assembly program. 
+In Blake2, the $nn$ configuration parameter specifies how many bytes long the resulting hash should be. This accelerator follows this convention and will only return $nn$ bytes as a result.
 
-If slow output mode is set, see [above](#slow-output-mode) all data steps in the data output sequence take 2 cycles, else, 
-each step takes 1 cycle. 
+Since this accelerator was designed to interface with an embedded MCU and not another accelerator or an FPGA, the accelerator asserts the `hash_v_o` signal ahead of starting to stream out the result. This is done so that we can allow the RP2040 PIO to detect the start of the result sequence and initiate capturing the data. Because of this, this accelerator is tightly co-designed with the RP2040 in mind and cannot be ported to other MCU families, as it is reliant on a 15/30ns (if slow mode is set) reaction time, followed by very timing-accurate capture of the GPIO values. See `firmware/data_rd.pio` for this PIO assembly program.
 
-The has read sequence has 2 parts: 
+If slow output mode is set (see [above](#slow-output-mode)), all data steps in the data output sequence take 2 cycles; otherwise, each step takes 1 cycle.
 
-1. `hash_v_o` is set to `1` for 1 step (1/2 cycles) in order to let the PIO initate data capture
-2. the hash result is streamed over $nn$ steps :
+The hash read sequence has 2 parts:
+1. `hash_v_o` is set to `1` for 1 step (1/2 cycles) in order to let the PIO initiate data capture
+2. The hash result is streamed over $nn$ steps:
    - `hash_v_o` is set to `1`
    - `hash_o[7:0]` contains the hash result
   
- #### Hash result in slow output mode
+ #### Example Hash result in slow output mode
 
- #### Hash result in fast output mode 
+In this example, slow output mode is set, and the accelerator is returning a hash result of $nn = 32$  bytes long. 
 
+![Slow read waves output](slow_rd_data_waves.png) 
 
+ #### Example Hash result in fast output mode 
+
+In this example, the defatul fast output mode is used, and the accelerator is returning a hash result of $nn = 32$  bytes long. 
+
+![Fast read waves output](fast_rd_data_waves.png) 
+
+#### Software 
+
+In order to capture this hash result, given the high-speed nature of the transfer and the precision needed in the capture, the entire capture sequence is offloaded to the PIO. Additionally, since, depending on the configured $nn$, the PIO RX FIFO (internal rx buffer) might be too small to store all of the hash result, a DMA stream is set up to automatically transfer RX FIFO entries to memory.
+
+Given there is only on the order of 1.5µs between the last data transfer cycle of the last block and the start of the hash result, and given this is not remotely enough time for our MCU to reliably set up a new data capture, the hash result read must be set up before the last data transfer cycle. In practice, in the firmware we use `setup_rd_dma_hash_stream` to set up this DMA stream before the start of any input data streaming, see `firmware/main.c`.
+
+Unlike the input data streaming from the MCU to the accelerator, the hash result is a gapless stream where data is transferred at every step. As such, it is very important that the MCU be able to stream uninterrupted without dropping any of the result bytes. Because of this, the DMA stream between the PIO SM used for reading and the memory is set up to be of the highest priority.
+
+Set up DMA stream to capture the hash result, part of `data_rd_utils.h`:
+```C
+void setup_rd_dma_hash_stream(uint dma_chan, uint nn, uint8_t* buffer, size_t bl, PIO pio, uint sm);
+```
+
+Parameters:
+- `dma_chan` - high priority DMA channel used to read from the PIO SM to memory
+- `nn` - hash result length in bytes
+- `buffer` - pointer to the target location in memory the DMA should write to
+- `bl` - buffer length in bytes
+- `pio` - base address of the PIO performing the hash read operation
+- `sm` - index of the PIO state machine currently running with the hash read program
+
+Given all the reading and transfer operations were already handled under the hood by the PIO and DMA, the `read_hash` function only needs to wait for the end of the DMA transfer operations and copy the hash result written by the DMA into the `hash` buffer.
+
+Read the hash result from the DMA target memory location, part of `data_rd_utils.h`:
+```C
+void read_hash(uint8_t* hash, uint8_t nn, uint8_t* buffer, size_t bl, uint dma_chan);
+```
+
+Parameters:
+- `hash` - pointer to the buffer to which the hash result will be copied
+- `nn` - hash result length in bytes
+- `buffer` - pointer to the target location in memory the DMA should write to
+- `bl` - buffer length in bytes
+- `dma_chan` - high priority DMA channel used to read from the PIO SM to memory
