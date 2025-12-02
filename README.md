@@ -5,7 +5,7 @@ tapout on the SKY130A node.
 
 It is a fully featured Blake2s implementation supporting both block streaming and using a secret key, with a maximum hash rate of 41.42 MB/s and a target operating frequency of 66 MHz.
 
-The full documentation on using this accelerator can be found: [here](docs/info.md)
+**The full documentation on this accelerator can be found:** [here](docs/info.md)
 
 ![asic floorplan](/docs/layout.png)
 
