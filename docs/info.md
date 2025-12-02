@@ -2,7 +2,8 @@
 
 This ASIC is a hashing accelerator for the Blake2 cryptographic hash function (RFC 7693).
 
-It is a fully featured Blake2s implementation supporting both block streaming and using a secret key, with a maximum hash rate of 41.42 MB/s.
+It is a fully featured Blake2s implementation supporting both block streaming and using a secret key, with a maximum hash rate of 41.42 MB/s and a 
+target frequency of 66 MHz.
 
 ## Blake2s Algorithm
 
