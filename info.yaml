@@ -47,12 +47,12 @@ pinout:
   uo[7]: "hash_o[7]"
 
   # Bidirectional pins
-  uio[0]: "ctrl_valid_i[0]"
-  uio[1]: "ctrl_mode_i[0]"
-  uio[2]: "ctrl_mode_i[1]"
+  uio[0]: "valid_i[0]"
+  uio[1]: "cmd_i[0]"
+  uio[2]: "cmd_i[1]"
   uio[3]: "ready_o"
-  uio[4]: "loopback_mode_i[0]"
-  uio[5]: "loopback_mode_i[1]"
+  uio[4]: "output_mode_i[0]"
+  uio[5]: "output_mode_i[1]"
   uio[6]: ""
   uio[7]: "hash_valid_o[7]"
 
