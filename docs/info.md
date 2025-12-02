@@ -26,6 +26,23 @@ $nn$ specifies the output hash size in bytes ($[1;32]$), while $ll$ denotes the 
 
 After processing all input data blocks, the final state is truncated to $nn$ bytes to produce the hash output.
 
+## Pinout 
+
+This accelerator uses the following pinout : 
+
+| ui (Inputs)       | uo (Outputs)      | uio (Bidirectional)       |
+| ----------------- | ----------------- | ------------------------- |
+| ui[0] = data_i[0] | uo[0] = hash_o[0] | uio[0] = valid_i[0]       |
+| ui[1] = data_i[1] | uo[1] = hash_o[1] | uio[1] = cmd_i[0]         |
+| ui[2] = data_i[2] | uo[2] = hash_o[2] | uio[2] = cmd_i[1]         |
+| ui[3] = data_i[3] | uo[3] = hash_o[3] | uio[3] = ready_o          |
+| ui[4] = data_i[4] | uo[4] = hash_o[4] | uio[4] = output_mode_i[0] |
+| ui[5] = data_i[5] | uo[5] = hash_o[5] | uio[5] = output_mode_i[1] |
+| ui[6] = data_i[6] | uo[6] = hash_o[6] | uio[6] =                  |
+| ui[7] = data_i[7] | uo[7] = hash_o[7] | uio[7] = hash_valid_o[7]  |
+
+![Chip pinout](chip.svg)
+
 ## Usage
 
 The typical sequence to offload the hashing operation to the accelerator would go as follows:
