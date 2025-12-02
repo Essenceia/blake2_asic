@@ -12,7 +12,26 @@ This is a hashing accelerator for the Blake2 cryptographic hash function (RFC 76
 
 This is a fully featured Blake2s implementation supporting both block streaming and using a secret key.
 
-## Blake2s Algorythm 
+## Blake2s Algorithm
+
+Blake2 is a cryptographic hash function used for applications such as digital signatures, integrity protection and message authentication. It comes in 2 variants, Blake2b and the less memory intensive Blake2s.
+
+|       |              BLAKE2s       |
+|-----------------|------------------|
+| Block bytes     | bb = 64          |
+| Hash bytes      | 1 <= nn <= 32    |
+| Key bytes       | 0 <= kk <= 32    |
+| Input bytes     | 0 <= ll < 2**64  |
+              
+In Blake2s, data is processed in blocks of $bb = 64$ bytes, where each block is run through a compression function for 10 rounds of mixing operations. 
+
+Each Blake2s run can be configured with specific values for $kk$, $nn$, and $ll$. 
+
+The parameter $kk$ represents the optional key length in bytes ($[0;32]$), where $kk = 0$ means keyless hashing and $kk > 0$ enables keyed mode. 
+
+$nn$ specifies the output hash size in bytes ($[1;32]$), while $ll$ denotes the total input message length in bytes (up to $2^{64}-1$). 
+
+After processing all input data blocks, the final state is truncated to $nn$ bytes to produce the hash output.
 
 ## Usage
 
