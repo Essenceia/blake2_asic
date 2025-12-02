@@ -3,7 +3,7 @@
 This ASIC is a hashing accelerator for the Blake2 cryptographic hash function (RFC 7693).
 
 It is a fully featured Blake2s implementation supporting both block streaming and using a secret key, with a maximum hash rate of 41.42 MB/s and a 
-target frequency of 66 MHz.
+target operating frequency of 66 MHz.
 
 ## Blake2s Algorithm
 
@@ -54,12 +54,8 @@ Typical reset sequence:
 ### Sending the Configuration
 
 The configuration packet is 10 bytes long and has the following format:
-```
- Byte:   0        1        2        3        4        5        6        7        8        9
-         +--------+--------+---------------------------------------------------------------+
-         |   kk   |   nn   |                          ll                                   |
-         +--------+--------+---------------------------------------------------------------+
-```
+
+![Configuration packet](packet.svg)
 
 $kk$ and $nn$ are both 8 bits wide, and $ll$ is 64 bits wide, and all use little endian.
 
