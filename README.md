@@ -22,6 +22,21 @@ There are currently no major manufacturing issues, with only the following minor
 
 Current status: **Taped-in**, in fabrication, part of the Tiny Tapeout `sky25b` shuttle. 
 
+## Verification 
+
+This design was verified using both simulation and emulation. 
+
+### Simulation 
+
+This design was initally verified through RTL simulation using a Cocotb-based testbench running Iverilog alongside an instrumented golden model (see `/tv`) for debugging intermediate states. Gate-level simulation with SDF timing back-annotation was performed using the CVC simulator. 
+Linting was done with Verilator, with waivers documented in `conf/waiver.vlt`.
+
+### Emulation
+
+The design was emulated on a Basys3 FPGA connected to an RP2040 (Raspberry Pi Pico) to co-bringup both the custom firmware and hardware. 
+The FPGA build flow includes automated insertion and connection of Xilinx ILA debug cores to signals marked for debug. 
+Firmware was debugged using OpenOCD + GDB with remote server support.
+
 ## Using this codebase 
 
 For getting started with using this codebase, documentation on the build flows can be found: [here](usage.md)
