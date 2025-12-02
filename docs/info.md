@@ -37,7 +37,7 @@ The typical sequence to offload the hashing operation to the accelerator would g
 All data exchanges with the accelerator are in little endian, and when sending multiple-byte-long arrays, the lower indexes are sent first.
 
 Notes:
-- Empty data transfer cycles, as in one or more clock cycles where `data_v_i` would go low in the middle of the transfer of both the input data and the configuration, are supported.
+- Empty data transfer cycles, as in one or more clock cycles where `valid_i` would go low in the middle of the transfer of both the input data and the configuration, are supported.
 ### Reset
 
 In order to reset this accelerator to its default uninitialized state, deassert the `rst_n` signal for at least 5 clock cycles. During normal operations, `rst_n` should be set to `1`.
