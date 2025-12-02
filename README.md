@@ -1,15 +1,13 @@
 # Blake2s RTL implementation
 
-Implementation of the Blake2s cryptographic hash function [(RFC7693)](docs/rfc7693.md) targetting
+Implementation of the Blake2s cryptographic hash function (RFC7693)targetting
 tapout on the SKY130A node.
 
-This is a fully featured Blake2s implementation supporting both block streaming and 
-proving the secret key. 
+It is a fully featured Blake2s implementation supporting both block streaming and using a secret key, with a maximum hash rate of 41.42 MB/s and a target operating frequency of 66 MHz.
 
-Documentation on using this accelerator can be found: [here](docs/info.md)
+The full documentation on using this accelerator can be found: [here](docs/info.md)
 
 ![asic floorplan](/docs/layout.png)
-
 
 ## ASIC 
 
@@ -17,22 +15,12 @@ This accelerator was designed for the SKY130A node, for a target operating frequ
 an a typical operating volate of 3.3V at 25°C.
 
 It occupies 682 x 225 µm an area envelop, making it one of the larget tiny tapeout blocks, with a staggering
-22% of the total area dedicated to flip-flops, majoritarily for 
-storing the hash intermediary data. 
+22% of the total area dedicated to flip-flops, mainly for 
+storing the hash intermediary values. 
 
-There are currently no major manifacturing issues, with only 3 minir antenna violations of P/R: 2.65, 1.26, 1.02.
+There are currently no major manifacturing issues, with only the following minor antenna violations of P/R: 2.65, 1.26, 1.02.
 
 Current status: **Taped-in**, in fabrication, part of the tiny-tapeout `sky25b` shuttle. 
-
-## Blake2s 
-
-### PPA 
-
-For this implementation, I have chosen to optimize for area usage, at the expense of some performance.
-
-### IO bottleneck
-
-This design was designed around an I/O bottneck on both the input and output direction. 
 
 ## Using this codebase 
 
