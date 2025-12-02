@@ -1,11 +1,3 @@
-<!---
-
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
-
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
 # Blake2s
 
 This is a hashing accelerator for the Blake2 cryptographic hash function (RFC 7693).
@@ -16,14 +8,14 @@ This is a fully featured Blake2s implementation supporting both block streaming 
 
 Blake2 is a cryptographic hash function used for applications such as digital signatures, integrity protection and message authentication. It comes in 2 variants, Blake2b and the less memory intensive Blake2s.
 
-|       |              BLAKE2s       |
+|                 |    BLAKE2s       |
 |-----------------|------------------|
 | Block bytes     | bb = 64          |
 | Hash bytes      | 1 <= nn <= 32    |
 | Key bytes       | 0 <= kk <= 32    |
 | Input bytes     | 0 <= ll < 2**64  |
               
-In Blake2s, data is processed in blocks of $bb = 64$ bytes, where each block is run through a compression function for 10 rounds of mixing operations. 
+In Blake2s, data is processed in blocks of $bb = 64$ bytes, where each block is run through a compression function for multiple rounds of mixing operations. 
 
 Each Blake2s run can be configured with specific values for $kk$, $nn$, and $ll$. 
 
@@ -44,12 +36,12 @@ The typical sequence to offload the hashing operation to the accelerator would g
 All data exchanges with the accelerator are in little endian, and when sending multiple-byte-long arrays, the lower indexes are sent first.
 
 Notes:
-- Empty cycles, as in one or more cycles where `data_v_i` would go low in the middle of the transfer of both the input data and the configuration, are supported.
+- Empty data transfer cycles, as in one or more clock cycles where `data_v_i` would go low in the middle of the transfer of both the input data and the configuration, are supported.
 ### Reset
 
 In order to reset this accelerator to its default uninitialized state, deassert the `rst_n` signal for at least 5 clock cycles. During normal operations, `rst_n` should be set to `1`.
 
-During at least 5 cycles:
+During at least 5 clock cycles:
 - `rst_n` is set to `0`
 
 #### Example
@@ -72,7 +64,7 @@ $kk$ and $nn$ are both 8 bits wide, and $ll$ is 64 bits wide, and all use little
 
 Sending the configuration takes 10 data transfer cycles, during which:
 - `valid_i` is set to `1`
-- `mode_i[1:0]` is set to `0`, indicating we are sending the configuration packet
+- `cmd_i[1:0]` is set to `0`, indicating we are sending the configuration packet
 - `data_i[7:0]` sends the next byte of the configuration packet
 
 #### Example
@@ -91,7 +83,7 @@ In the firmware, the `send_config` function defined in `data_wr_utils.h` is used
 void send_config(uint8_t kk, uint8_t nn, uint64_t ll, uint dma_chan, pinout_t *p, size_t pl, PIO pio, uint sm);
 ```
 Parameters : 
-- `kk` confirguration value, key length
+- `kk` configuration value, key length
 - `nn` configuration value, final hash length in bytes
 - `ll` configuration value, raw data length
 - `dma_chan` is the DMA channel used to offload copying data between the memory and the RP2040's PIO
@@ -108,12 +100,15 @@ The sequence to send a block is as follows:
 
 Then, start the 64 data transfer cycles during which:
 - `valid_i` is set to `1`
-- `ctrl_i[1:0]` is set to `1` if this is the first data transfer cycle of the first block, `3` if this is the last data transfer cycle of the last block, else it is set to `2`
+- `cmd_i[1:0]` is set to :
+  - `1` if this is the first data transfer cycle of the first block
+  - `3` if this is the last data transfer cycle of the last block
+  - `2` by default
 - `data_i[7:0]` contains the current data byte
 
 The `ready_v_o` signal indicates the accelerator is ready to receive data. In order to improve performance, users can skip waiting for this signal to be re-asserted between each byte transfer and can safely proceed with sending the entire block as soon as the `ready_v_o` signal is observed at `1`.
 
-This optimization has a limitation: since it takes 2 clock cycles for the new value of `ready_v_o` to be written on the output pin, users employing this optimization must guarantee at least a 30ns gap (for 66MHz) between the end of the previous block write and the evaluation of the next `ready_v_o` signal. The current firmware guarantees such a gap.
+⚠️ Critical Timing Requirement: When using the optimization, since it takes 2 clock cycles for the new value of `ready_v_o` to be written on the output pin, users must guarantee at least a 30ns gap (for 66MHz) between the end of the previous block write and the evaluation of the next `ready_v_o` signal. The current firmware guarantees such a gap.
 
 #### Single Block Example
 
@@ -153,7 +148,7 @@ Parameters :
 
 ### Slow Output Mode
 
-For the `sky130b` shuttle, although the maximum stable GPIO input switching frequency is 66 MHz, due to a weak driver on the output buffer path resulting in much higher slew rate, the current maximum output stable supported transitioning frequency is 33 MHz.
+For the `sky130b` shuttle, although the maximum stable GPIO input switching frequency is 66 MHz, due to a weak driver on the output buffer path resulting in much higher slew rate, the current maximum output stable supported transitioning frequency is 33 MHz. 
 
 In order to allow more room for experimenting with the limits of the maximum stable output switching rate while supporting a more stable operating mode, the "slow output" mode was added to this design.
 
@@ -173,15 +168,15 @@ After the accelerator finishes hashing the last block, it will begin streaming o
 
 In Blake2, the $nn$ configuration parameter specifies how many bytes long the resulting hash should be. This accelerator follows this convention and will only return $nn$ bytes as a result.
 
-Since this accelerator was designed to interface with an embedded MCU and not another accelerator or an FPGA, the accelerator asserts the `hash_v_o` signal ahead of starting to stream out the result. This is done so that we can allow the RP2040 PIO to detect the start of the result sequence and initiate capturing the data. Because of this, this accelerator is tightly co-designed with the RP2040 in mind and cannot be ported to other MCU families, as it is reliant on a 15/30ns (if slow mode is set) reaction time, followed by very timing-accurate capture of the GPIO values. See `firmware/data_rd.pio` for this PIO assembly program.
+Since this accelerator was designed to interface with an embedded MCU and not another accelerator or an FPGA, the accelerator asserts the `hash_v_o` signal ahead of starting to stream out the result. This is done so that we can allow the RP2040 PIO to detect the start of the result sequence and initiate capturing the data. Because of this, this accelerator is tightly co-designed with the RP2040 in mind and cannot be ported to other MCU families, as it is reliant on a 15ns/30ns (if slow mode is set) reaction time, followed by very timing-accurate capture of the GPIO values. See `firmware/data_rd.pio` for this PIO assembly program.
 
-If slow output mode is set (see [above](#slow-output-mode)), all data steps in the data output sequence take 2 cycles; otherwise, each step takes 1 cycle.
+If slow output mode is set (see [above](#slow-output-mode)), all data steps in the data output sequence take 2 clock cycles; otherwise, each step takes 1 cycle.
 
 The hash read sequence has 2 parts:
-1. `hash_v_o` is set to `1` for 1 step (1/2 cycles) in order to let the PIO initiate data capture
+1. `h_v_o` (`hash_v_o`) is set to `1` for 1 step (1/2 clock cycles) in order to let the PIO initiate data capture
 2. The hash result is streamed over $nn$ steps:
-   - `hash_v_o` is set to `1`
-   - `hash_o[7:0]` contains the hash result
+   - `h_v_o` (`hash_v_o`) is set to `1`
+   - `h_o` (`hash_o[7:0]`) contains the hash result
   
  #### Example Hash result in slow output mode
 
