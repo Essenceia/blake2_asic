@@ -6,9 +6,10 @@ tapout on the SKY130A node.
 This is a fully featured Blake2s implementation supporting both block streaming and 
 proving the secret key. 
 
+Documentation on using this accelerator can be found: [here](docs/info.md)
+
 ![asic floorplan](/docs/layout.png)
 
-Documentation on using this accelerator can be found: [here](docs/index.md)
 
 ## ASIC 
 
