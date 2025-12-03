@@ -187,7 +187,7 @@ Since this accelerator was designed to interface with an embedded MCU and not an
 If slow output mode is set (see [above](#slow-output-mode)), all data steps in the data output sequence take 2 clock cycles; otherwise, each step takes 1 cycle.
 
 The hash read sequence has 2 parts:
-1. `h_v_o` (`hash_v_o`) is set to `1` for 1 step (1/2 clock cycles) in order to let the PIO initiate data capture
+1. `h_v_o` (`hash_valid_o`) is set to `1` for 1 step (1/2 clock cycles) in order to let the PIO initiate data capture
 2. The hash result is streamed over $nn$ steps:
    - `h_v_o` (`hash_valid_o`) is set to `1`
    - `h_o` (`hash_o[7:0]`) contains the hash result
